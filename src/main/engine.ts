@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import type { Action, Connection, Conversation, Snapshot, Update } from "../shared/schema";
-import { codexModel } from "../shared/schema";
+import { agentSchema, codexModel } from "../shared/schema";
 import { agentError, AuthenticationRequired, connection, runReader } from "./agents/reader";
 import { loadFeed } from "./feeds";
 import { publicUrl } from "./network";
@@ -11,7 +11,7 @@ type Dependencies = { fetchFeed: typeof loadFeed; run: typeof runReader; connect
 const defaults: Dependencies = { fetchFeed: loadFeed, run: runReader, connect: connection };
 
 export class Engine {
-  connections: Connection[] = ["claude", "codex"].map((agent) => ({ agent: agent === "claude" ? "claude" : "codex", installed: false, status: "checking", detail: "接続を確認しています" }));
+  connections: Connection[] = agentSchema.options.map((agent) => ({ agent, installed: false, status: "checking", detail: "接続を確認しています" }));
   refreshing = false;
   private listeners = new Set<(update: Update) => void>();
   private jobs = new Map<string, { controller: AbortController; done: Promise<void> }>();
@@ -30,7 +30,7 @@ export class Engine {
   private changed() { this.emit({ type: "snapshot", snapshot: this.snapshot }); }
 
   async refreshConnections() {
-    this.connections = await Promise.all([this.dependencies.connect("claude", this.runnerDirectory), this.dependencies.connect("codex", this.runnerDirectory)]);
+    this.connections = await Promise.all(agentSchema.options.map((agent) => this.dependencies.connect(agent, this.runnerDirectory)));
     this.changed();
   }
 

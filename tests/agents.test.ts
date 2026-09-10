@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { agentError, readerPrompt, runCodex } from "../src/main/agents/reader";
+import { agentError, antigravityUnavailable, connection, readerPrompt, runCodex, runReader } from "../src/main/agents/reader";
 import { codexArguments, RpcClient } from "../src/main/agents/process";
 import type { Conversation } from "../src/shared/schema";
 
@@ -110,6 +110,22 @@ describe("reading context", () => {
       { id: "f", role: "assistant", text: "途中の応答", createdAt: "now", state: { status: "cancelled" } },
     ],
   };
+  test("Antigravity does not launch a reader or fall through to Codex before tool isolation is supported", async () => {
+    const output: string[] = [];
+    await expect(runReader("antigravity", { ...conversation, agent: "antigravity" }, "要約して", directory, new AbortController().signal, (event) => { if (event.type === "delta") output.push(event.text); })).rejects.toThrow(antigravityUnavailable);
+    expect(output).toEqual([]);
+    expect(agentError(new Error(antigravityUnavailable))).toBe(antigravityUnavailable);
+  });
+  test("an installed Antigravity CLI is detected without executing it or claiming it is ready", async () => {
+    const previous = process.env.REEDAR_ANTIGRAVITY_BIN;
+    process.env.REEDAR_ANTIGRAVITY_BIN = process.execPath;
+    try {
+      expect(await connection("antigravity", directory)).toEqual({ agent: "antigravity", installed: true, status: "unsupported", detail: antigravityUnavailable });
+    } finally {
+      if (previous === undefined) delete process.env.REEDAR_ANTIGRAVITY_BIN;
+      else process.env.REEDAR_ANTIGRAVITY_BIN = previous;
+    }
+  });
   test("article instructions stay quoted and cancelled output does not become successful conversation history", () => {
     const prompt: unknown = JSON.parse(readerPrompt(conversation, "根拠を説明して"));
     expect(prompt).toMatchObject({ question: "根拠を説明して", source: { text: conversation.source.text }, history: [{ role: "user", text: "要約して" }, { role: "assistant", text: "要約" }] });

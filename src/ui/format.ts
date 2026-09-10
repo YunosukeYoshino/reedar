@@ -1,6 +1,6 @@
 import type { Article, Message } from "../shared/schema";
 
-export const agentName = { claude: "Claude Code", codex: "Codex" };
+export const agentName = { claude: "Claude Code", codex: "Codex", antigravity: "Antigravity" };
 export const shortDate = new Intl.DateTimeFormat("ja-JP", { month: "short", day: "numeric" });
 export const fullDate = new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "long", day: "numeric" });
 export const time = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" });

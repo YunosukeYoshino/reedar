@@ -19,18 +19,19 @@ export function agentEnvironment() {
 }
 
 export async function executable(agent: Agent) {
-  const override = process.env[agent === "codex" ? "REEDAR_CODEX_BIN" : "REEDAR_CLAUDE_BIN"];
+  const command = agent === "antigravity" ? "agy" : agent;
+  const override = process.env[{ codex: "REEDAR_CODEX_BIN", claude: "REEDAR_CLAUDE_BIN", antigravity: "REEDAR_ANTIGRAVITY_BIN" }[agent]];
   const paths = [
     ...(override ? [override] : []),
     ...(agent === "codex" ? ["/Applications/ChatGPT.app/Contents/Resources/codex", "/Applications/Codex.app/Contents/Resources/codex"] : []),
-    ...(process.env.PATH ?? "").split(delimiter).filter(Boolean).map((directory) => join(directory, agent)),
-    join(homedir(), ".local/bin", agent), join(homedir(), ".local/share/mise/shims", agent), `/opt/homebrew/bin/${agent}`, `/usr/local/bin/${agent}`,
+    ...(process.env.PATH ?? "").split(delimiter).filter(Boolean).map((directory) => join(directory, command)),
+    join(homedir(), ".local/bin", command), join(homedir(), ".local/share/mise/shims", command), `/opt/homebrew/bin/${command}`, `/usr/local/bin/${command}`,
   ];
   for (const path of paths) {
     try { await access(path, constants.X_OK); return path; }
     catch { /* Try the next installed executable. */ }
   }
-  throw new Error(`${agent === "codex" ? "Codex" : "Claude Code"} CLIが見つかりません。`);
+  throw new Error(`${agent === "codex" ? "Codex" : agent === "claude" ? "Claude Code" : "Antigravity"} CLIが見つかりません。`);
 }
 
 export async function codexArguments(configPath = join(process.env.CODEX_HOME || join(homedir(), ".codex"), "config.toml")) {

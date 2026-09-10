@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const agentSchema = z.enum(["claude", "codex"]);
+export const agentSchema = z.enum(["claude", "codex", "antigravity"]);
 export type Agent = z.infer<typeof agentSchema>;
 export const codexModel = "gpt-5.3-codex-spark";
 
@@ -73,7 +73,7 @@ export type ReaderState = z.infer<typeof stateSchema>;
 export const connectionSchema = z.object({
   agent: agentSchema,
   installed: z.boolean(),
-  status: z.enum(["checking", "ready", "authentication", "unavailable", "error"]),
+  status: z.enum(["checking", "ready", "authentication", "unavailable", "unsupported", "error"]),
   detail: z.string(),
 });
 export type Connection = z.infer<typeof connectionSchema>;
