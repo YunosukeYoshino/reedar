@@ -71,7 +71,7 @@ export type ReaderState = z.infer<typeof stateSchema>;
 export const connectionSchema = z.object({
   agent: agentSchema,
   installed: z.boolean(),
-  status: z.enum(["ready", "authentication", "unavailable", "error"]),
+  status: z.enum(["checking", "ready", "authentication", "unavailable", "error"]),
   detail: z.string(),
 });
 export type Connection = z.infer<typeof connectionSchema>;
@@ -82,6 +82,12 @@ export const snapshotSchema = z.object({
   refreshing: z.boolean(),
 });
 export type Snapshot = z.infer<typeof snapshotSchema>;
+
+export const updateSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("snapshot"), snapshot: snapshotSchema }),
+  z.object({ type: z.literal("conversation"), conversation: conversationSchema }),
+]);
+export type Update = z.infer<typeof updateSchema>;
 
 export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("feed.add"), url: z.string().trim().url().max(2048), folderId: z.string().nullable() }),
