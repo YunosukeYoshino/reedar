@@ -86,3 +86,13 @@ Manual shutdown and restart checks preserved articles, folders, unread state, st
 - Signed installers, notarization, mobile clients, and subscription-service sync have not been validated or shipped.
 
 Return to the [README](../README.md) or [contribution guide](../CONTRIBUTING.md).
+
+## macOS preview packaging
+
+On September 11, 2026, electron-builder 26.15.3 produced Apple Silicon `.app`, DMG, and ZIP previews for version 0.1.0 using Electron 42.11.1. The package metadata points to `icon.icns`; the generated icon and version appeared in the packaged app's About panel during a native Mac UI check.
+
+After normally quitting the development app, the packaged app launched successfully and displayed the existing library and conversation count. Its connection dialog reported Codex connected, Claude Code requiring login, and Antigravity pending. Packaging verification did not issue additional live model requests.
+
+`codesign --verify --deep --strict` passed for the ad-hoc-signed bundle. DMG verification and ZIP integrity checks passed. The SHA-256 manifest was generated and verified. The ASAR root contained only `dist`, `node_modules`, and `package.json`; checks found no local data, Git directory, source/test tree, or release outputs. Electron and Chromium license notices were present in `Contents/Resources/licenses/`.
+
+The automated suite remained at 37 passing tests, with type checking and builds passing. The manually triggered GitHub Actions workflow parsed successfully and has read-only repository contents permission; it has not run on GitHub. Intel execution, Developer ID signing, notarization, and downloaded-app Gatekeeper approval on another Mac remain unverified. See [Distribution](distribution.md) for commands and release requirements.

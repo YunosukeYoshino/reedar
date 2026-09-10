@@ -31,6 +31,9 @@ You do not need a model subscription to run the automated suite. Live AI checks 
 | `src/shared/schema.ts` | Zod contracts shared by the host and renderer |
 | `src/ui/` | React reader interface and styles |
 | `scripts/build.ts` | Browser and Electron builds |
+| `scripts/icons.ts`, `assets/` | App icon and macOS icon conversion |
+| `electron-builder.json` | Local macOS preview packaging |
+| `.github/workflows/build-macos.yml` | Manually triggered preview artifact builds |
 | `tests/` | Protocol, storage, network, workflow, desktop, and UI tests |
 | `docs/` | Design context and validation evidence |
 
@@ -73,3 +76,7 @@ Articles and conversation history are untrusted data. A feed must not grant an a
 Keep AI execution separate from human reading state. Keep a conversation's source snapshot stable when a feed refreshes. Never include credentials or private launch URLs in issues, logs, test fixtures, or model input.
 
 Report security concerns using [SECURITY.md](SECURITY.md).
+
+## Build a distributable app
+
+See [macOS distribution](docs/distribution.md) for DMG / ZIP builds, checksums, the manual GitHub Actions workflow, and the distinction between preview builds and notarized Developer ID releases. Packaging does not publish anything automatically.

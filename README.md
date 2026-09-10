@@ -10,7 +10,7 @@ Bring your own CLI login. Reedar uses the agent's existing service access and us
 
 > **Early preview.** Run from source on macOS. The interface and reading assistant currently use Japanese. Codex reading is verified with GPT-5.3-Codex-Spark; other integrations have different levels of support.
 
-[Getting started](#getting-started) · [Agent support](#agent-support) · [Contributing](CONTRIBUTING.md) · [Validation](docs/validation.md)
+[Getting started](#getting-started) · [Agent support](#agent-support) · [Contributing](CONTRIBUTING.md) · [Validation](docs/validation.md) · [Distribution](docs/distribution.md)
 
 ## Features
 
@@ -41,7 +41,7 @@ bun install --frozen-lockfile
 bun run start
 ```
 
-Installation downloads Electron. The start command builds the renderer and desktop entry point, then opens Reedar. Signed installers and release binaries are not available yet.
+Installation downloads Electron. The start command builds the renderer and desktop entry point, then opens Reedar. Local DMG and ZIP previews can also be built with `bun run dist:mac --arm64`. Public signed releases are not available yet; see [Distribution](docs/distribution.md).
 
 ### Add your first feed
 
@@ -112,6 +112,8 @@ bun run typecheck  # TypeScript checks
 bun test           # Automated tests; no live model requests
 bun run build      # Renderer and Electron bundles
 bun run check      # Typecheck, tests, and build
+bun run dist:mac --arm64  # Build a macOS DMG and ZIP preview
+bun run checksums  # Write the archive checksum manifest
 ```
 
 Open the URL printed by `bun run dev`. The server uses a fresh session and an available port on each launch. Keep that URL private. This command does not watch files; restart it after source changes.
@@ -122,7 +124,7 @@ Built with **Electron, React, TypeScript, and Bun**. Source lives in `src/main` 
 
 ## Scope
 
-This preview focuses on reading a local feed library and discussing individual articles. It does not yet include subscription deletion, OPML import/export, full-page extraction, Inoreader or other service sync, mobile clients, automatic digests, or published installers. Large-library performance has not been benchmarked.
+This preview focuses on reading a local feed library and discussing individual articles. It does not yet include subscription deletion, OPML import/export, full-page extraction, Inoreader or other service sync, mobile clients, automatic digests, or publicly released installers. Large-library performance has not been benchmarked.
 
 Normal shutdown preserves partial answers. A crash may lose deltas written since the last save; interrupted responses are marked as failed on the next launch. Corrupt storage produces an error instead of being replaced with an empty library.
 

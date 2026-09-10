@@ -1,0 +1,39 @@
+{
+  "appId": "dev.reedar.app",
+  "productName": "Reedar",
+  "asar": true,
+  "npmRebuild": false,
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "files": [
+    "dist/**/*",
+    "package.json"
+  ],
+  "artifactName": "Reedar-${version}-mac-${arch}-preview.${ext}",
+  "mac": {
+    "category": "public.app-category.news",
+    "icon": "build/icon.icns",
+    "target": [
+      "dmg",
+      "zip"
+    ],
+    "identity": "-",
+    "hardenedRuntime": false,
+    "notarize": false
+  },
+  "dmg": {
+    "sign": false
+  },
+  "extraFiles": [
+    {
+      "from": "node_modules/electron/dist/LICENSE",
+      "to": "Resources/licenses/Electron-LICENSE.txt"
+    },
+    {
+      "from": "node_modules/electron/dist/LICENSES.chromium.html",
+      "to": "Resources/licenses/LICENSES.chromium.html"
+    }
+  ]
+}

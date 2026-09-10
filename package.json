@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "check": "bun run typecheck && bun test && bun run build",
-    "icons": "bun scripts/icons.ts"
+    "icons": "bun scripts/icons.ts",
+    "dist:mac": "bun run build && bun run icons && electron-builder --mac --publish never",
+    "checksums": "cd release && shasum -a 256 *.dmg *.zip > SHA256SUMS.txt"
   },
   "dependencies": {
     "html-entities": "^2.6.0",
@@ -33,10 +35,12 @@
     "@types/react-dom": "^19.2.0",
     "@types/sanitize-html": "^2.16.0",
     "electron": "^42.0.0",
+    "electron-builder": "26.15.3",
     "happy-dom": "^20.13.2",
     "typescript": "^5.9.3"
   },
   "trustedDependencies": [
     "electron"
-  ]
+  ],
+  "author": "Reedar contributors"
 }
