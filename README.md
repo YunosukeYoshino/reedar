@@ -2,7 +2,7 @@
 
 Macで使う、3ペインのRSSリーダー。選択した記事を、既存のClaude Code / Codex CLIを通じて日本語で要約し、続けて質問できます。
 
-現状: RSS閲覧とCodexの実接続は動作確認済み。Claude Codeの実接続は、このMacでのCLIログイン待ちです。完了条件と検証結果は[VALIDATION.md](VALIDATION.md)を参照してください。
+現状: RSS閲覧とCodex（GPT-5.3-Codex-Spark）の要約・追加質問を実機確認済み。Claude Codeの実接続確認はユーザー指定で保留。Antigravityは接続対象に追加し、CLI検出まで対応しています。記事の送信は連携準備中です。完了条件と検証結果は[VALIDATION.md](VALIDATION.md)を参照してください。
 
 ## 起動
 
@@ -44,9 +44,13 @@ claude auth login
 codex login
 ```
 
+Codexは `gpt-5.3-codex-spark` を指定します。CLIが別モデルを返した場合は実行を中止し、黙って別モデルへ切り替えません。新しい回答にはモデル名を保存し、過去のモデル不明な回答と区別します。
+
 CodexはChatGPTログイン、Claude Codeは既存のサブスクリプションによるログインを使います。APIキーを必須にする経路はありません。CLIの既存契約の利用枠を消費します。
 
 このMacではCodexのアプリ同梱CLI（0.153.4）を使用して実接続を確認しました。アプリ同梱CLIを優先し、次にPATHと一般的なインストール先を探します。必要なら起動時に `REEDAR_CODEX_BIN` / `REEDAR_CLAUDE_BIN` で実行ファイルを指定できます。既存のCLI設定ファイルは書き換えません。
+
+Antigravityの `agy` もPATH・一般的なインストール先から検出します（`REEDAR_ANTIGRAVITY_BIN` で指定可能）。現行CLIで読書中のファイル・外部ツール操作を無効化できる方法を確認できなかったため、「エージェント接続」では「連携準備中」と表示します。インストール検出を認証済み・利用可能とは扱いません。Antigravityへの記事送信は実行せず、ユーザー全体のCLI設定も変更しません。
 
 ## 保存
 
