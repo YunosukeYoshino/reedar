@@ -1,0 +1,73 @@
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { Engine } from "../src/main/engine";
+import { Store } from "../src/main/store";
+import { startServer } from "../src/main/server";
+
+const directory = await mkdtemp(join(tmpdir(), "reedar-http-test-"));
+let runtime: Awaited<ReturnType<typeof startServer>>;
+let cookie = "";
+beforeAll(async () => {
+  const assets = join(directory, "assets");
+  await mkdir(assets);
+  await writeFile(join(assets, "index.html"), "<!doctype html><title>Reedar test</title>");
+  await writeFile(join(directory, "private.txt"), "PRIVATE CANARY");
+  const store = await Store.open(join(directory, "state.json"));
+  const engine = new Engine(store, join(directory, "runner"), {
+    run: async () => {}, fetchFeed: async () => { throw new Error("no fixture feeds"); },
+    connect: async (agent) => ({ agent, installed: false, status: "unavailable", detail: "fixture" }),
+  });
+  await engine.initialize();
+  runtime = await startServer({ dataDirectory: directory, staticDirectory: assets, engine });
+  const response = await fetch(runtime.url, { redirect: "manual" });
+  cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
+});
+afterAll(async () => { await runtime.close(); await Bun.spawn(["trash", directory]).exited; });
+
+describe("local reader boundary", () => {
+  test("requires a private session, sets an HttpOnly cookie, and removes the launch token from navigation", async () => {
+    expect((await fetch(`${runtime.origin}/api/state`)).status).toBe(401);
+    const bootstrap = await fetch(runtime.url, { redirect: "manual" });
+    expect(bootstrap.status).toBe(303);
+    expect(bootstrap.headers.get("set-cookie")).toContain("HttpOnly; SameSite=Strict");
+    expect(bootstrap.headers.get("location")).toBe("/");
+    const page = await fetch(runtime.origin, { headers: { Cookie: cookie } });
+    expect(page.status).toBe(200);
+    expect(page.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    expect(page.headers.get("referrer-policy")).toBe("no-referrer");
+  });
+  test("rejects cross-origin mutations and DNS rebinding without changing state", async () => {
+    const action = JSON.stringify({ type: "folder.save", id: null, name: "Attack" });
+    const crossOrigin = await fetch(`${runtime.origin}/api/action`, { method: "POST", headers: { Cookie: cookie, Origin: "https://attacker.example", "Content-Type": "application/json" }, body: action });
+    expect(crossOrigin.status).toBe(403);
+    const rebinding = await fetch(`${runtime.origin}/api/state`, { headers: { Cookie: cookie, Host: "attacker.example" } });
+    expect(rebinding.status).toBe(403);
+    expect(runtime.engine.store.state.folders).toHaveLength(0);
+  });
+  test("validates actions and persists an authorized folder change", async () => {
+    const headers = { Cookie: cookie, Origin: runtime.origin, "Content-Type": "application/json" };
+    const bad = await fetch(`${runtime.origin}/api/action`, { method: "POST", headers, body: JSON.stringify({ type: "folder.save", id: null, name: "" }) });
+    expect(bad.status).toBe(400);
+    const good = await fetch(`${runtime.origin}/api/action`, { method: "POST", headers, body: JSON.stringify({ type: "folder.save", id: null, name: "Design" }) });
+    expect(good.status).toBe(200);
+    expect(runtime.engine.store.state.folders[0]?.name).toBe("Design");
+  });
+  test("does not expose outside files or act as a general image proxy", async () => {
+    const outside = await fetch(`${runtime.origin}/%252e%252e/private.txt`, { headers: { Cookie: cookie } });
+    expect(await outside.text()).not.toContain("PRIVATE CANARY");
+    const proxy = await fetch(`${runtime.origin}/image?url=https://example.com/unknown.jpg`, { headers: { Cookie: cookie } });
+    expect(proxy.status).toBe(404);
+  });
+  test("streams the current snapshot through authenticated SSE", async () => {
+    const controller = new AbortController();
+    const response = await fetch(`${runtime.origin}/api/events`, { headers: { Cookie: cookie }, signal: controller.signal });
+    expect(response.headers.get("content-type")).toBe("text/event-stream");
+    const reader = response.body?.getReader();
+    const chunk = await reader?.read();
+    expect(new TextDecoder().decode(chunk?.value)).toContain('"type":"snapshot"');
+    await reader?.cancel();
+    controller.abort();
+  });
+});
