@@ -18,17 +18,22 @@ function json(response: ServerResponse, status: number, value: unknown) {
 }
 
 function matchesToken(received: string | undefined, token: string) {
-  if (!received || received.length !== token.length) return false;
-  return timingSafeEqual(Buffer.from(received), Buffer.from(token));
+  if (!received) return false;
+  const input = Buffer.from(received);
+  const expected = Buffer.from(token);
+  return input.length === expected.length && timingSafeEqual(input, expected);
 }
 
-async function requestBody(request: IncomingMessage) {
-  let body = "";
+export async function requestBody(request: AsyncIterable<unknown>) {
+  const chunks: Buffer[] = [];
+  let length = 0;
   for await (const chunk of request) {
-    body += Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk);
-    if (body.length > 32_000) throw new Error("入力が大きすぎます。");
+    if (!Buffer.isBuffer(chunk)) throw new Error("入力形式が正しくありません。");
+    length += chunk.length;
+    if (length > 32_000) throw new Error("入力が大きすぎます。");
+    chunks.push(chunk);
   }
-  return JSON.parse(body) as unknown;
+  return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
 }
 
 export async function startServer(options: Options) {

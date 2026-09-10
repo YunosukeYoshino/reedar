@@ -2,9 +2,10 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { request } from "node:http";
 import { Engine } from "../src/main/engine";
 import { Store } from "../src/main/store";
-import { startServer } from "../src/main/server";
+import { requestBody, startServer } from "../src/main/server";
 
 const directory = await mkdtemp(join(tmpdir(), "reedar-http-test-"));
 let runtime: Awaited<ReturnType<typeof startServer>>;
@@ -59,6 +60,24 @@ describe("local reader boundary", () => {
     expect(await outside.text()).not.toContain("PRIVATE CANARY");
     const proxy = await fetch(`${runtime.origin}/image?url=https://example.com/unknown.jpg`, { headers: { Cookie: cookie } });
     expect(proxy.status).toBe(404);
+  });
+  test("preserves Japanese input split across network chunks", async () => {
+    const body = Buffer.from(JSON.stringify({ type: "folder.save", id: null, name: "日本語" }));
+    const split = body.indexOf(Buffer.from("日")) + 1;
+    async function* chunks() { yield body.subarray(0, split); yield body.subarray(split); }
+    expect(await requestBody(chunks())).toEqual({ type: "folder.save", id: null, name: "日本語" });
+    const status = await new Promise<number | undefined>((resolve, reject) => {
+      const pending = request(`${runtime.origin}/api/action`, { method: "POST", headers: { Cookie: cookie, Origin: runtime.origin, "Content-Type": "application/json" } }, (response) => { response.resume(); response.on("end", () => resolve(response.statusCode)); });
+      pending.on("error", reject);
+      pending.write(body.subarray(0, split));
+      setTimeout(() => pending.end(body.subarray(split)), 15);
+    });
+    expect(status).toBe(200);
+    expect(runtime.engine.store.state.folders.at(-1)?.name).toBe("日本語");
+  });
+  test("rejects malformed Unicode launch keys as unauthenticated", async () => {
+    const response = await fetch(`${runtime.origin}/?key=${encodeURIComponent("é".repeat(64))}`);
+    expect(response.status).toBe(401);
   });
   test("streams the current snapshot through authenticated SSE", async () => {
     const controller = new AbortController();
