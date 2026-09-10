@@ -78,3 +78,11 @@ test("an authentication-waiting conversation can be cancelled from the panel", a
   await act(async () => cancel.click());
   expect(actions.at(-1)).toEqual({ type: "chat.stop", conversationId: "waiting" });
 });
+
+test("the conversation list shows the failure reason instead of claiming it is still waiting", async () => {
+  const last = snapshot.state.conversations[0]?.messages.at(-1);
+  if (last?.role !== "assistant") throw new Error("Missing assistant fixture");
+  last.state = { status: "failed", error: "Interrupted on restart" };
+  await act(async () => stream?.onmessage?.({ data: JSON.stringify({ type: "snapshot", snapshot }) }));
+  expect(window.document.querySelector(".activity-row p")?.textContent).toBe("Interrupted on restart");
+});
