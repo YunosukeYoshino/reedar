@@ -1,0 +1,35 @@
+{
+  "name": "reedar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A quiet RSS reader with your own coding agents.",
+  "type": "module",
+  "main": "dist/electron.cjs",
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "dev": "bun run build && bun src/main/dev.ts",
+    "start": "bun run build && electron .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "check": "bun run typecheck && bun test && bun run build"
+  },
+  "dependencies": {
+    "ipaddr.js": "^2.2.0",
+    "lucide-react": "^0.577.0",
+    "react": "~19.2.0",
+    "react-dom": "~19.2.0",
+    "rss-parser": "^3.13.0",
+    "sanitize-html": "^2.17.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.10",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/sanitize-html": "^2.16.0",
+    "electron": "^42.0.0",
+    "typescript": "^5.9.3"
+  },
+  "trustedDependencies": ["electron"]
+}

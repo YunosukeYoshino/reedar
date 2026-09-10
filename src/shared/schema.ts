@@ -1,0 +1,97 @@
+import { z } from "zod";
+
+export const agentSchema = z.enum(["claude", "codex"]);
+export type Agent = z.infer<typeof agentSchema>;
+
+export const folderSchema = z.object({ id: z.string(), name: z.string() });
+export const feedSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  title: z.string(),
+  siteUrl: z.string(),
+  folderId: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+  error: z.string().nullable(),
+});
+export type Feed = z.infer<typeof feedSchema>;
+
+export const articleSchema = z.object({
+  id: z.string(),
+  feedId: z.string(),
+  title: z.string(),
+  url: z.string(),
+  author: z.string(),
+  publishedAt: z.string(),
+  receivedAt: z.string(),
+  html: z.string(),
+  text: z.string(),
+  excerpt: z.string(),
+  imageUrl: z.string().nullable(),
+  read: z.boolean(),
+  starred: z.boolean(),
+});
+export type Article = z.infer<typeof articleSchema>;
+
+export const runStateSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("running") }),
+  z.object({ status: z.literal("waiting"), reason: z.string() }),
+  z.object({ status: z.literal("completed") }),
+  z.object({ status: z.literal("failed"), error: z.string() }),
+  z.object({ status: z.literal("cancelled") }),
+]);
+export type RunState = z.infer<typeof runStateSchema>;
+
+export const messageSchema = z.discriminatedUnion("role", [
+  z.object({ id: z.string(), role: z.literal("user"), text: z.string(), createdAt: z.string() }),
+  z.object({
+    id: z.string(), role: z.literal("assistant"), text: z.string(), createdAt: z.string(),
+    state: runStateSchema,
+  }),
+]);
+export type Message = z.infer<typeof messageSchema>;
+
+export const conversationSchema = z.object({
+  id: z.string(),
+  articleId: z.string(),
+  agent: agentSchema,
+  source: z.object({ title: z.string(), url: z.string(), text: z.string(), capturedAt: z.string() }),
+  messages: z.array(messageSchema),
+});
+export type Conversation = z.infer<typeof conversationSchema>;
+
+export const stateSchema = z.object({
+  version: z.literal(1),
+  folders: z.array(folderSchema),
+  feeds: z.array(feedSchema),
+  articles: z.array(articleSchema),
+  conversations: z.array(conversationSchema),
+});
+export type ReaderState = z.infer<typeof stateSchema>;
+
+export const connectionSchema = z.object({
+  agent: agentSchema,
+  installed: z.boolean(),
+  status: z.enum(["ready", "authentication", "unavailable", "error"]),
+  detail: z.string(),
+});
+export type Connection = z.infer<typeof connectionSchema>;
+
+export const snapshotSchema = z.object({
+  state: stateSchema,
+  connections: z.array(connectionSchema),
+  refreshing: z.boolean(),
+});
+export type Snapshot = z.infer<typeof snapshotSchema>;
+
+export const actionSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("feed.add"), url: z.string().trim().url().max(2048), folderId: z.string().nullable() }),
+  z.object({ type: z.literal("feed.move"), id: z.string(), folderId: z.string().nullable() }),
+  z.object({ type: z.literal("folder.save"), id: z.string().nullable(), name: z.string().trim().min(1).max(60) }),
+  z.object({ type: z.literal("article.read"), id: z.string(), read: z.boolean() }),
+  z.object({ type: z.literal("article.star"), id: z.string(), starred: z.boolean() }),
+  z.object({ type: z.literal("refresh") }),
+  z.object({ type: z.literal("connections.refresh") }),
+  z.object({ type: z.literal("chat.send"), articleId: z.string(), agent: agentSchema, text: z.string().trim().min(1).max(4000) }),
+  z.object({ type: z.literal("chat.stop"), conversationId: z.string() }),
+]);
+export type Action = z.infer<typeof actionSchema>;
