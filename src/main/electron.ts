@@ -15,7 +15,7 @@ else {
     window?.focus();
   });
   void app.whenReady().then(async () => {
-    runtime = await startServer({ dataDirectory: join(app.getPath("appData"), "Reedar"), staticDirectory: join(__dirname, "web") });
+    runtime = await startServer({ dataDirectory: join(app.getPath("appData"), "Reedar"), staticDirectory: join(app.getAppPath(), "dist", "web") });
     const window = new BrowserWindow({
       title: "Reedar", width: 1380, height: 900, minWidth: 920, minHeight: 620,
       backgroundColor: "#1b1c21", titleBarStyle: "hiddenInset", trafficLightPosition: { x: 18, y: 18 },
