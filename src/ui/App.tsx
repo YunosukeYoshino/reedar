@@ -32,7 +32,7 @@ export function App() {
   function openConversation(item: Conversation) { setScope({ type: "all" }); setFilter("all"); setSearch(""); setSelectedId(item.articleId); setAgent(item.agent); setAiOpen(true); }
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.isComposing || document.querySelector("dialog[open]") || event.target instanceof HTMLElement && (event.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"].includes(event.target.tagName))) return;
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.isComposing || document.querySelector("dialog[open]") || event.target instanceof HTMLElement && (event.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName))) return;
       if (event.key === "j" || event.key === "ArrowDown") { event.preventDefault(); move(1); }
       else if (event.key === "k" || event.key === "ArrowUp") { event.preventDefault(); move(-1); }
       else if (event.key === "/") { event.preventDefault(); document.querySelector<HTMLInputElement>('input[aria-label="記事を検索"]')?.focus(); }
