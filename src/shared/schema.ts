@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const agentSchema = z.enum(["claude", "codex"]);
 export type Agent = z.infer<typeof agentSchema>;
+export const codexModel = "gpt-5.3-codex-spark";
 
 export const folderSchema = z.object({ id: z.string(), name: z.string() });
 export const feedSchema = z.object({
@@ -46,6 +47,7 @@ export const messageSchema = z.discriminatedUnion("role", [
   z.object({
     id: z.string(), role: z.literal("assistant"), text: z.string(), createdAt: z.string(),
     state: runStateSchema,
+    model: z.string().optional(),
   }),
 ]);
 export type Message = z.infer<typeof messageSchema>;

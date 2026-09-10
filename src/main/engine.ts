@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import type { Action, Connection, Conversation, Snapshot, Update } from "../shared/schema";
+import { codexModel } from "../shared/schema";
 import { agentError, AuthenticationRequired, connection, runReader } from "./agents/reader";
 import { loadFeed } from "./feeds";
 import { publicUrl } from "./network";
@@ -99,6 +100,7 @@ export class Engine {
     const now = new Date().toISOString();
     const message: Extract<Conversation["messages"][number], { role: "assistant" }> = {
       id: randomUUID(), role: "assistant", text: "", createdAt: now, state: { status: "running" },
+      ...(agent === "codex" ? { model: codexModel } : {}),
     };
     conversation.messages.push({ id: randomUUID(), role: "user", text, createdAt: now }, message);
     const current = conversation;

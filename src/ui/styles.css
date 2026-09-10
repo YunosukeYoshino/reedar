@@ -130,6 +130,7 @@ kbd { font: inherit; font-size: 9px; border: 1px solid #ffffff12; border-radius:
 .agent-picker { display: flex; gap: 5px; padding: 15px 16px 12px; }
 .agent-picker button { display: flex; align-items: center; justify-content: center; gap: 7px; flex: 1; font-size: 11px; border: 1px solid transparent; color: #89838e; padding: 8px 5px; border-radius: 5px; }
 .agent-picker button.active { background: #323037; border-color: #ffffff0d; color: #e8e0e9; }
+.model-caption { margin: -4px 20px 12px; color: var(--muted); font-size: 10px; }
 .agent-symbol { font-size: 17px; line-height: 12px; }
 .agent-symbol.claude { color: #cc947e; }
 .source-context { display: flex; align-items: center; gap: 7px; color: #8d8792; font-size: 10px; margin: 0 18px; padding-bottom: 13px; border-bottom: 1px solid var(--border); }

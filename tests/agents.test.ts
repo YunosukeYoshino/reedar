@@ -63,8 +63,12 @@ describe("agent protocol", () => {
         const m=JSON.parse(line); const send=(data)=>console.log(JSON.stringify(data));
         if(m.method==="initialize") send({id:m.id,result:{}});
         if(m.method==="account/read") send({id:m.id,result:{account:{type:"chatgpt"}}});
-        if(m.method==="thread/start") send({id:m.id,result:{thread:{id:"t"}}});
+        if(m.method==="thread/start") {
+          if(m.params.model!=="gpt-5.3-codex-spark") return send({id:m.id,error:{message:"Use the requested Spark model"}});
+          send({id:m.id,result:{thread:{id:"t"},model:m.params.model}});
+        }
         if(m.method==="turn/start") {
+          if(m.params.model!=="gpt-5.3-codex-spark" || m.params.effort!=="medium") return send({id:m.id,error:{message:"Pin Spark and a supported reasoning effort on each turn"}});
           if("access" in m.params.sandboxPolicy) return send({id:m.id,error:{message:"readOnly.access is no longer supported"}});
           if(m.params.sandboxPolicy.type!=="readOnly" || m.params.sandboxPolicy.networkAccess!==false) return send({id:m.id,error:{message:"Reading must be isolated from writes and network"}});
           send({id:m.id,result:{turn:{id:"turn"}}});
@@ -76,6 +80,23 @@ describe("agent protocol", () => {
     const output: string[] = [];
     await runCodex(process.execPath, "要約して", directory, new AbortController().signal, (event) => { if (event.type === "delta") output.push(event.text); }, ["-e", script]);
     expect(output).toEqual(["記事の", "記事の要約です"]);
+  });
+
+  test("does not silently continue when the CLI substitutes a different model", async () => {
+    const script = `
+      const {createInterface} = require("node:readline");
+      createInterface({input:process.stdin}).on("line",line=>{
+        const m=JSON.parse(line); const send=(data)=>console.log(JSON.stringify(data));
+        if(m.method==="initialize") send({id:m.id,result:{}});
+        if(m.method==="account/read") send({id:m.id,result:{account:{type:"chatgpt"}}});
+        if(m.method==="thread/start") send({id:m.id,result:{thread:{id:"t"},model:"different-model"}});
+        if(m.method==="turn/start") {
+          send({id:m.id,result:{}});
+          send({method:"item/agentMessage/delta",params:{delta:"Wrong model"}});
+          send({method:"turn/completed",params:{turn:{status:"completed"}}});
+        }
+      });`;
+    await expect(runCodex(process.execPath, "要約して", directory, new AbortController().signal, () => {}, ["-e", script])).rejects.toThrow("指定したモデル");
   });
 });
 
