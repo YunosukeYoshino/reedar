@@ -15,6 +15,7 @@ else {
     window?.focus();
   });
   void app.whenReady().then(async () => {
+    if (!app.isPackaged) app.dock?.setIcon(join(app.getAppPath(), "dist", "icon.png"));
     runtime = await startServer({ dataDirectory: join(app.getPath("appData"), "Reedar"), staticDirectory: join(app.getAppPath(), "dist", "web") });
     const window = new BrowserWindow({
       title: "Reedar", width: 1380, height: 900, minWidth: 920, minHeight: 620,

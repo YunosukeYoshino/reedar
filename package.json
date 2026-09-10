@@ -11,7 +11,8 @@
     "start": "bun run build && electron .",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "check": "bun run typecheck && bun test && bun run build"
+    "check": "bun run typecheck && bun test && bun run build",
+    "icons": "bun scripts/icons.ts"
   },
   "dependencies": {
     "html-entities": "^2.6.0",
@@ -35,5 +36,7 @@
     "happy-dom": "^20.13.2",
     "typescript": "^5.9.3"
   },
-  "trustedDependencies": ["electron"]
+  "trustedDependencies": [
+    "electron"
+  ]
 }

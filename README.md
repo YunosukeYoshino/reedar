@@ -1,5 +1,7 @@
 # Reedar
 
+<img src="assets/icon.png" alt="Reedar: an open book with RSS arcs on a graphite tile" width="128" height="128">
+
 **A quiet RSS reader. A conversation with every article.**
 
 Reedar is a desktop RSS reader for macOS, inspired by the familiar three-pane reading experience. Follow your feeds, organize articles, and ask your existing coding agents to help you understand what you read.
