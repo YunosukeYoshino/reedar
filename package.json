@@ -15,6 +15,7 @@
     "check": "bun run typecheck && bun test && bun run build",
     "icons": "bun scripts/icons.ts",
     "dist:mac": "bun run build && bun run icons && electron-builder --mac --publish never",
+    "dist:mac:signed": "bun run dist:mac --config electron-builder.signed.cjs",
     "checksums": "cd release && shasum -a 256 *.dmg *.zip > SHA256SUMS.txt"
   },
   "dependencies": {

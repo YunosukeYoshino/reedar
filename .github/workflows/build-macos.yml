@@ -11,6 +11,11 @@ on:
         options:
           - arm64
           - x64
+      sign_and_notarize:
+        description: Require Developer ID signing and Apple notarization (repository secrets required)
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
@@ -34,12 +39,34 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Validate
         run: bun run check
-      - name: Package preview
+      - name: Package ad-hoc preview
+        if: ${{ !inputs.sign_and_notarize }}
         run: |
           case "$BUILD_ARCH" in
             arm64|x64) bun run dist:mac --"$BUILD_ARCH" ;;
             *) echo "Unsupported architecture" >&2; exit 1 ;;
           esac
+      - name: Package signed update
+        if: ${{ inputs.sign_and_notarize }}
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          bun -e 'const required = ["CSC_LINK", "CSC_KEY_PASSWORD", "APPLE_ID", "APPLE_APP_SPECIFIC_PASSWORD", "APPLE_TEAM_ID"]; const missing = required.filter((name) => !process.env[name]); if (missing.length) { console.error("Missing signing configuration: " + missing.join(", ")); process.exit(1); }'
+          case "$BUILD_ARCH" in
+            arm64|x64) bun run dist:mac:signed --"$BUILD_ARCH" ;;
+            *) echo "Unsupported architecture" >&2; exit 1 ;;
+          esac
+          APP_DIRECTORY=mac
+          if [ "$BUILD_ARCH" = arm64 ]; then APP_DIRECTORY=mac-arm64; fi
+          codesign --verify --deep --strict -R 'anchor apple generic and certificate leaf[field.1.2.840.113635.100.6.1.13] exists' "release/$APP_DIRECTORY/Reedar.app"
+          xcrun stapler validate "release/$APP_DIRECTORY/Reedar.app"
+      - name: Check update metadata and write checksums
+        run: |
+          test -f release/latest-mac.yml
           bun run checksums
       - name: Upload preview artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -48,6 +75,8 @@ jobs:
           path: |
             release/*.dmg
             release/*.zip
+            release/*.yml
+            release/*.blockmap
             release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
