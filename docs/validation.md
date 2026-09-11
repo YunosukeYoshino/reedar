@@ -1,10 +1,10 @@
 # Validation record
 
-Last verified: **September 11, 2026 (JST)**. Environment: macOS, Bun 1.3.12, Electron 42.11.1. This record describes observed behavior, not a promise of compatibility with every account or future CLI release.
+Last verified: **September 12, 2026 (JST)**. Environment: macOS, Bun 1.3.12, Electron 42.11.1. This record describes observed behavior, not a promise of compatibility with every account or future CLI release. Earlier checks retain their original scope below; see the [roadmap](../ROADMAP.md) for outstanding work.
 
 ## Automated checks
 
-`bun run check` passed TypeScript checking, **37 tests with 109 assertions**, and the renderer and Electron builds.
+`bun run check` passed TypeScript checking, **45 tests with 139 assertions**, and the renderer and Electron builds. The linked-article and inline-summary section below records the latest additions.
 
 The suite covers:
 

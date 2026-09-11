@@ -2,6 +2,8 @@
 
 Reedar is an early macOS RSS reader with article-focused AI conversations. Contributions should keep reading fast, preserve local data, and make each agent's actual capabilities clear.
 
+Start with the [roadmap](ROADMAP.md) for proposed work and its completion criteria. Unchecked items describe outstanding work; they are not all requirements for the first public preview.
+
 ## Set up a development environment
 
 Use macOS, Bun, and the `trash` command. The validated baseline is Bun 1.3.12 and Electron 42.11.1. Tests use `trash` to remove temporary fixtures.

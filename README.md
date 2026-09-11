@@ -10,7 +10,7 @@ Bring your own CLI login. Reedar uses the agent's existing service access and us
 
 > **Early preview.** Run from source on macOS. The interface and reading assistant currently use Japanese. Codex reading is verified with GPT-5.3-Codex-Spark; other integrations have different levels of support.
 
-[Getting started](#getting-started) · [Agent support](#agent-support) · [Contributing](CONTRIBUTING.md) · [Validation](docs/validation.md) · [Distribution](docs/distribution.md)
+[Getting started](#getting-started) · [Agent support](#agent-support) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md) · [Validation](docs/validation.md) · [Distribution](docs/distribution.md)
 
 ## Features
 
@@ -127,6 +127,8 @@ Built with **Electron, React, TypeScript, and Bun**. Source lives in `src/main` 
 ## Scope
 
 This preview focuses on reading a local feed library and discussing individual articles. It does not yet include subscription deletion, OPML import/export, Inoreader or other service sync, mobile clients, automatic digests, or publicly released installers. Large-library performance has not been benchmarked.
+
+The [roadmap checklist](ROADMAP.md) tracks completed work, public-preview preparation, daily-reader improvements, and longer-term candidates.
 
 Normal shutdown preserves partial answers. A crash may lose deltas written since the last save; interrupted responses are marked as failed on the next launch. Corrupt storage produces an error instead of being replaced with an empty library.
 
