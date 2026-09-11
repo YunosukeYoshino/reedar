@@ -1,12 +1,12 @@
 # Roadmap
 
-Current baseline: **0.1.2**, September 12, 2026. Reedar runs locally on macOS with verified Codex reading and locally built Apple Silicon previews. There is no public release or configured Git remote yet.
+Current baseline: **0.1.2**, September 12, 2026. Reedar runs locally on macOS with verified Codex reading and locally built Apple Silicon previews. The first public prerelease is [v0.1.2](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2).
 
 Checked items are implemented and validated within the scope stated. Unchecked items are proposed work, not release-date commitments. The sections below have separate completion criteria: daily-reader improvements and additional providers do not all need to ship before a first public preview.
 
 ## Recommended minimum scope
 
-Automatic PR checks are now configured. Before the first round of outside testing, run the hosted workflow and complete **a fresh installation on another Apple Silicon Mac**. The license and preview limitations are now documented; repository and release publication remain separate outstanding actions. Other reader features can follow a clearly labeled early preview.
+Automatic PR checks are configured. Complete **a fresh installation on another Apple Silicon Mac** to extend validation beyond the development machine. The license and preview limitations are documented in the public repository and prerelease. Other reader features can follow a clearly labeled early preview.
 
 Subscription removal/restoration and OPML import/export are now implemented. Folder cleanup can follow. Automatic refresh is the next convenience improvement; service sync, more providers, and automatic updates can wait.
 
@@ -33,10 +33,10 @@ The next distribution milestone is a discoverable source repository and an accur
 
 - [x] **Choose the source license.** MIT license added with matching project metadata and packaging configuration.
 - [x] **State preview limitations.** README and distribution notes identify Apple Silicon / Codex verification, ad-hoc signing, missing notarization, and unverified installation on another Mac.
-- [ ] **Publish the repository.** Configure its GitHub remote and public project information, then publish the intended source revision.
-- [x] **Run checks on pull requests.** Automatic typecheck, test, and build CI is configured for pull requests and pushes to main. Hosted execution remains unverified until the repository is published.
+- [x] **Publish the repository.** Source is available at [YunosukeYoshino/reedar](https://github.com/YunosukeYoshino/reedar).
+- [x] **Run checks on pull requests.** Automatic typecheck, test, and build CI is configured for pull requests and pushes to main. Hosted results are available in [GitHub Actions](https://github.com/YunosukeYoshino/reedar/actions).
 - [ ] **Validate hosted packaging.** Run the existing macOS workflow on GitHub and verify its downloaded artifacts. Local packaging already works.
-- [ ] **Publish a tagged preview.** Attach the DMG, ZIP, and checksums to a GitHub Release; include a changelog, architecture, signing status, and supported-agent limitations.
+- [x] **Publish a tagged preview.** The v0.1.2 prerelease includes DMG, ZIP, checksums, features, architecture, signing status, and supported-agent limitations.
 - [ ] **Document a fresh installation.** Test on another Apple Silicon Mac with no source checkout, including reading without a CLI and connecting a supported CLI; add a short, non-personal screenshot or demo to the README.
 
 See [Distribution](docs/distribution.md) for the current build procedure. Repository publication and release uploads are still outstanding actions; this checklist does not perform them.

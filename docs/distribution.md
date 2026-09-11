@@ -54,7 +54,7 @@ The workflow pins action revisions, runs the automated checks, and packages on a
 
 For distribution, create a GitHub Release from the intended source tag and attach the DMG, ZIP, and manifest. Describe the architecture, source commit, signing status, and known agent limitations in the release notes. CI artifacts are temporary build outputs, while Release assets are the intended download location.
 
-The packaging workflow and the separate [PR CI workflow](../.github/workflows/ci.yml) have been checked locally but have not been run on GitHub yet. No remote repository or public download URL is configured in this checkout.
+The public repository is [YunosukeYoshino/reedar](https://github.com/YunosukeYoshino/reedar). The [v0.1.2 prerelease](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2) contains the first downloadable preview. See [GitHub Actions](https://github.com/YunosukeYoshino/reedar/actions) for current hosted checks and packaging runs. Release notes identify which build produced the attached archives.
 
 ## Developer ID releases
 

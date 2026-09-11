@@ -10,7 +10,9 @@ Bring your own CLI login. Reedar uses the agent's existing service access and us
 
 > **Early preview for macOS on Apple Silicon.** Codex reading is verified with GPT-5.3-Codex-Spark. Claude Code's successful live reading is unverified, and Antigravity reading is disabled. The interface and reading assistant currently use Japanese.
 >
-> **Download limitations:** the local DMG / ZIP previews use ad-hoc signing and are **not notarized**. macOS may block a downloaded app. Installation on another Mac and Intel execution have not been verified. See [Distribution](docs/distribution.md) before sharing a build.
+> **Download limitations:** the DMG / ZIP previews use ad-hoc signing and are **not notarized**. macOS may block a downloaded app. Installation on another Mac and Intel execution have not been verified. See [Distribution](docs/distribution.md) before installing a build.
+
+[Download v0.1.2 — first public preview](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2)
 
 [Getting started](#getting-started) · [Agent support](#agent-support) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md) · [Validation](docs/validation.md) · [Distribution](docs/distribution.md)
 
@@ -31,20 +33,23 @@ AI requests are explicit and apply to the selected article. AI activity does not
 ### Requirements
 
 - macOS. Other platforms have not been validated.
-- Bun. The current development baseline is **1.3.12**.
+- Apple Silicon for the downloadable preview.
 - For AI reading, a supported CLI installed and signed in with access to the requested model. Feed reading works without an AI login.
-- For running the test suite, the `trash` command must be available on `PATH`; tests use it to clean up temporary files.
+
+### Install the preview
+
+Download the DMG from the [v0.1.2 release](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2), open it, and drag Reedar into Applications. The ZIP is an alternative containing the same app. Neither Bun nor a source checkout is required. The release includes a SHA-256 manifest and the preview limitations above.
 
 ### Run the desktop app
 
-From a local checkout:
+For development, install Bun (the current baseline is **1.3.12**). The test suite also requires `trash` on `PATH` for temporary-file cleanup. From a local checkout:
 
 ```sh
 bun install --frozen-lockfile
 bun run start
 ```
 
-Installation downloads Electron. The start command builds the renderer and desktop entry point, then opens Reedar. Local DMG and ZIP previews can also be built with `bun run dist:mac --arm64`. Public signed releases are not available yet; see [Distribution](docs/distribution.md).
+Installation downloads Electron. The start command builds the renderer and desktop entry point, then opens Reedar. Local DMG and ZIP previews can also be built with `bun run dist:mac --arm64`. Developer ID signed releases are not available yet; see [Distribution](docs/distribution.md).
 
 ### Add your first feed
 
@@ -87,7 +92,7 @@ claude auth login
 
 Codex requires a ChatGPT login and access to `gpt-5.3-codex-spark`. Reedar checks the model returned by the CLI and stops if it differs; it does not silently substitute another model. Claude Code is intended to use an existing subscription login. Requests consume the connected service's usage allowance.
 
-Reedar prefers the Codex CLI bundled with the desktop app, then checks `PATH` and common install locations. You can specify an executable with `REEDAR_CODEX_BIN`, `REEDAR_CLAUDE_BIN`, or `REEDAR_ANTIGRAVITY_BIN`. The Antigravity override affects detection only. Reedar does not rewrite your existing CLI settings.
+Reedar prefers the Codex CLI bundled with OpenAI’s Codex desktop app, then checks `PATH` and common install locations. You can specify an executable with `REEDAR_CODEX_BIN`, `REEDAR_CLAUDE_BIN`, or `REEDAR_ANTIGRAVITY_BIN`. The Antigravity override affects detection only. Reedar does not rewrite your existing CLI settings.
 
 See the [validation record](docs/validation.md) for tested versions, evidence, and integration limitations.
 
@@ -138,13 +143,13 @@ Open the URL printed by `bun run dev`. The server uses a fresh session and an av
 
 Both desktop and browser development accept `REEDAR_DATA_DIR` to choose a separate library directory. Without it, the default locations above apply. Browser development also accepts `REEDAR_PORT` to choose a port. A separate data directory is useful for testing an empty library without changing your normal subscriptions.
 
-The [CI workflow](.github/workflows/ci.yml) runs these checks on pull requests and pushes to `main`, without live model requests. It is configured locally; hosted execution still needs a GitHub remote.
+The [CI workflow](.github/workflows/ci.yml) runs these checks on pull requests and pushes to `main`, without live model requests. See [GitHub Actions](https://github.com/YunosukeYoshino/reedar/actions) for hosted results.
 
 Built with **Electron, React, TypeScript, and Bun**. Source lives in `src/main` (desktop host and local services), `src/ui` (reader interface), and `src/shared` (validated data contracts). See [Contributing](CONTRIBUTING.md) for the repository map and workflow.
 
 ## Scope
 
-This preview focuses on reading a local feed library and discussing individual articles. It does not yet include folder deletion, scheduled refresh, full-library backup/restore, Inoreader or other service sync, mobile clients, automatic digests, or publicly released installers. Large-library performance has not been benchmarked.
+This preview focuses on reading a local feed library and discussing individual articles. It does not yet include folder deletion, scheduled refresh, full-library backup/restore, Inoreader or other service sync, mobile clients, automatic digests, or Developer ID signed installers. Large-library performance has not been benchmarked.
 
 The [roadmap checklist](ROADMAP.md) tracks completed work, public-preview preparation, daily-reader improvements, and longer-term candidates.
 

@@ -124,4 +124,8 @@ The packaged app was copied outside the source checkout and launched on the same
 
 The updated app was then reopened with the ordinary library and displayed the existing three feeds, 78 articles, 42 unread, one star, and six conversations. This was an isolated-library check on the development Mac, not installation on a second Mac. No additional live AI request was issued. A machine without an installed CLI, downloaded-app Gatekeeper behavior, and a fresh installation on another Mac remain unverified.
 
-The Apple Silicon 0.1.2 app, DMG, and ZIP include the project's MIT license. Bundle signature verification, DMG verification, ZIP integrity, and SHA-256 manifest verification passed. Signing remains ad-hoc and the preview is not notarized. Automatic PR/main CI is configured with read-only contents permission; no Git remote is configured, so neither hosted CI nor hosted packaging has run. All changes and artifacts remain local.
+The Apple Silicon 0.1.2 app, DMG, and ZIP include the project's MIT license. Bundle signature verification, DMG verification, ZIP integrity, and SHA-256 manifest verification passed. Signing remains ad-hoc and the preview is not notarized. These checks preceded publication and used local artifacts.
+
+## First public prerelease — September 12, 2026
+
+Source was published to [YunosukeYoshino/reedar](https://github.com/YunosukeYoshino/reedar). The first hosted [CI run](https://github.com/YunosukeYoshino/reedar/actions/runs/34631456205) passed at commit `acfd815a51525054a977ca51566f9db8a631156a`, using a clean macOS runner to install dependencies, typecheck, run the test suite, and build the renderer and desktop host. This does not replace the outstanding second-Mac installation check. The [v0.1.2 release notes](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2) record the final source revision, archive provenance, and download limitations.
