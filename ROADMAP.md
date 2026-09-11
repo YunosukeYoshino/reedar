@@ -1,14 +1,14 @@
 # Roadmap
 
-Current baseline: **0.1.1**, September 12, 2026. Reedar runs locally on macOS with verified Codex reading and locally built Apple Silicon previews. There is no public release or configured Git remote yet.
+Current baseline: **0.1.2**, September 12, 2026. Reedar runs locally on macOS with verified Codex reading and locally built Apple Silicon previews. There is no public release or configured Git remote yet.
 
 Checked items are implemented and validated within the scope stated. Unchecked items are proposed work, not release-date commitments. The sections below have separate completion criteria: daily-reader improvements and additional providers do not all need to ship before a first public preview.
 
 ## Recommended minimum scope
 
-For the first round of outside testing, prioritize **automatic PR checks** and **a fresh installation on another Apple Silicon Mac**. The license and preview limitations are now documented; repository and release publication remain separate outstanding actions. Other reader features can follow a clearly labeled early preview.
+Automatic PR checks are now configured. Before the first round of outside testing, run the hosted workflow and complete **a fresh installation on another Apple Silicon Mac**. The license and preview limitations are now documented; repository and release publication remain separate outstanding actions. Other reader features can follow a clearly labeled early preview.
 
-For the next small product release, prioritize **subscription removal** and **OPML import/export**: users need to correct their library and move subscriptions in and out. Folder cleanup can follow subscription removal. Automatic refresh is the next convenience improvement; service sync, more providers, and automatic updates can wait.
+Subscription removal/restoration and OPML import/export are now implemented. Folder cleanup can follow. Automatic refresh is the next convenience improvement; service sync, more providers, and automatic updates can wait.
 
 The detailed checkboxes below remain the source of status for these priorities.
 
@@ -23,7 +23,7 @@ The detailed checkboxes below remain the source of status for these priorities.
 - [x] Explicit execution states, cancellation, source snapshots, and restricted reading sessions.
 - [x] App icon, local Apple Silicon DMG / ZIP packaging, and checksums; ad-hoc signing only.
 - [x] English project and contribution documentation, issue / PR templates, and a manual packaging workflow definition.
-- [x] Local automated checks: 45 tests / 139 assertions, type checking, and desktop / renderer builds.
+- [x] Local automated checks: 58 tests / 186 assertions, type checking, and desktop / renderer builds.
 
 Evidence and provider-specific limits: [Validation](docs/validation.md).
 
@@ -34,7 +34,7 @@ The next distribution milestone is a discoverable source repository and an accur
 - [x] **Choose the source license.** MIT license added with matching project metadata and packaging configuration.
 - [x] **State preview limitations.** README and distribution notes identify Apple Silicon / Codex verification, ad-hoc signing, missing notarization, and unverified installation on another Mac.
 - [ ] **Publish the repository.** Configure its GitHub remote and public project information, then publish the intended source revision.
-- [ ] **Run checks on pull requests.** Add automatic typecheck, test, and build CI. The existing workflow is manual only.
+- [x] **Run checks on pull requests.** Automatic typecheck, test, and build CI is configured for pull requests and pushes to main. Hosted execution remains unverified until the repository is published.
 - [ ] **Validate hosted packaging.** Run the existing macOS workflow on GitHub and verify its downloaded artifacts. Local packaging already works.
 - [ ] **Publish a tagged preview.** Attach the DMG, ZIP, and checksums to a GitHub Release; include a changelog, architecture, signing status, and supported-agent limitations.
 - [ ] **Document a fresh installation.** Test on another Apple Silicon Mac with no source checkout, including reading without a CLI and connecting a supported CLI; add a short, non-personal screenshot or demo to the README.
@@ -45,8 +45,9 @@ See [Distribution](docs/distribution.md) for the current build procedure. Reposi
 
 Prioritize moving an existing feed library into Reedar and managing it without editing local JSON.
 
-- [ ] **Remove subscriptions and folders.** Define what happens to cached articles and conversations, and provide a recoverable removal flow.
-- [ ] **Import and export OPML.** Preserve folder membership, handle duplicate subscriptions, and report individual import failures.
+- [x] **Remove and restore subscriptions.** Removed feeds stop refreshing and disappear from reading views; cached articles, stars, and conversations are retained for restoration.
+- [ ] **Remove folders.** Define where their subscriptions move, with an undo or recovery flow.
+- [x] **Import and export OPML.** Preserve folder membership, skip duplicates, report individual failures, and support cancellation. Nested folder paths are flattened; the import limit is 256 KB / 200 feeds.
 - [ ] **Refresh feeds automatically while the app is open.** Add a configurable interval, retry/backoff, and conditional requests so repeated refreshes do not download unchanged feeds unnecessarily.
 - [ ] **Mark a feed or folder as read.** Add scoped bulk actions with a clear target and undo.
 - [ ] **Discover feeds from website URLs.** Offer RSS / Atom candidates when a user enters a normal site URL; retain the existing public-network checks.

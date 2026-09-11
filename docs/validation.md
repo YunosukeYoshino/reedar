@@ -4,7 +4,7 @@ Last verified: **September 12, 2026 (JST)**. Environment: macOS, Bun 1.3.12, Ele
 
 ## Automated checks
 
-`bun run check` passed TypeScript checking, **45 tests with 139 assertions**, and the renderer and Electron builds. The linked-article and inline-summary section below records the latest additions.
+`bun run check` passed TypeScript checking, **58 tests with 186 assertions**, and the renderer and Electron builds. The dated sections below record the feature-specific additions.
 
 The suite covers:
 
@@ -109,3 +109,19 @@ A live packaged-app check used the Publickey article about .NET 11 RC1. Its feed
 Extraction remains best effort: blocked, authenticated, paywalled, non-HTML, and JavaScript-only pages may not yield an article. Text is not silently truncated to fit the model; the existing 180,000-character prompt limit fails explicitly. Automated tests cover fallback and cancellation; the live model check covered the successful Codex path.
 
 The Apple Silicon 0.1.1 app, DMG, and ZIP were rebuilt locally. Distribution remains an ad-hoc signed, unnotarized preview; no GitHub publication was performed.
+
+## Subscription management and OPML — September 12, 2026
+
+Version 0.1.2 adds subscription removal/restoration and OPML import/export. The suite passed **58 tests / 186 assertions**, including preservation of removed-feed data, removal during refresh, import duplicates and partial failures, import cancellation, XML limits, external-inclusion rejection, authenticated export, large import requests, and invalid UTF-8 file selection. Type checking and both builds passed. React Doctor scored 100/100 with no findings for the six files in the OPML UI change; this is a scoped scan, not a new full-application score. `bun audit` returned no reported vulnerabilities.
+
+The packaged app was copied outside the source checkout and launched on the same Apple Silicon Mac with an empty library using `REEDAR_DATA_DIR`. Native UI checks confirmed:
+
+- Registering Publickey's Atom URL retrieved 15 articles. Reading and starring an article left 14 unread and one star.
+- Removing the feed hid its articles; restoring it recovered all 15 articles, the unread count, and the star.
+- Selecting an OPML file through the macOS file picker imported Zenn into `Import test`. The four-entry file produced one registration, two duplicate skips, and one private-network URL rejection.
+- Exporting through the native save dialog produced an OPML file that parsed back to both active subscriptions and the expected folder membership, without article or conversation data.
+- Normal shutdown and restart preserved two feeds, 35 articles, 34 unread, one star, and the imported folder.
+
+The updated app was then reopened with the ordinary library and displayed the existing three feeds, 78 articles, 42 unread, one star, and six conversations. This was an isolated-library check on the development Mac, not installation on a second Mac. No additional live AI request was issued. A machine without an installed CLI, downloaded-app Gatekeeper behavior, and a fresh installation on another Mac remain unverified.
+
+The Apple Silicon 0.1.2 app, DMG, and ZIP include the project's MIT license. Bundle signature verification, DMG verification, ZIP integrity, and SHA-256 manifest verification passed. Signing remains ad-hoc and the preview is not notarized. Automatic PR/main CI is configured with read-only contents permission; no Git remote is configured, so neither hosted CI nor hosted packaging has run. All changes and artifacts remain local.

@@ -19,13 +19,13 @@ bun run checksums
 
 The packaging command rebuilds the app, creates the ICNS icon using macOS `sips` and `iconutil`, and invokes electron-builder with publishing disabled.
 
-For version 0.1.1, Apple Silicon outputs are:
+For version 0.1.2, Apple Silicon outputs are:
 
 ```text
 release/
   mac-arm64/Reedar.app
-  Reedar-0.1.1-mac-arm64-preview.dmg
-  Reedar-0.1.1-mac-arm64-preview.zip
+  Reedar-0.1.2-mac-arm64-preview.dmg
+  Reedar-0.1.2-mac-arm64-preview.zip
   SHA256SUMS.txt
 ```
 
@@ -54,7 +54,7 @@ The workflow pins action revisions, runs the automated checks, and packages on a
 
 For distribution, create a GitHub Release from the intended source tag and attach the DMG, ZIP, and manifest. Describe the architecture, source commit, signing status, and known agent limitations in the release notes. CI artifacts are temporary build outputs, while Release assets are the intended download location.
 
-The workflow has been reviewed locally but has not been run on GitHub yet. No remote repository or public download URL is configured in this checkout.
+The packaging workflow and the separate [PR CI workflow](../.github/workflows/ci.yml) have been checked locally but have not been run on GitHub yet. No remote repository or public download URL is configured in this checkout.
 
 ## Developer ID releases
 

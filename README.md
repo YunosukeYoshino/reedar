@@ -17,7 +17,8 @@ Bring your own CLI login. Reedar uses the agent's existing service access and us
 ## Features
 
 - **Three-pane reading:** feeds and folders, an article list, and the article itself.
-- **Your own library:** direct RSS / Atom subscriptions, folders, unread filters, stars, and search across downloaded titles and text.
+- **Your own library:** direct RSS / Atom subscriptions, folders, unread filters, stars, and search across downloaded titles and text. Remove subscriptions and restore them with their articles and conversations intact.
+- **Move your subscriptions:** import and export OPML with folder membership, duplicate detection, progress, cancellation, and per-feed results.
 - **Read with an agent:** summarize a selected article, ask follow-up questions, and see answers as they stream.
 - **Conversations that stay with the article:** local history includes a snapshot of the source text used for the conversation.
 - **Clear execution states:** running, waiting, completed, failed, and cancelled, with a stop control that preserves partial answers.
@@ -54,6 +55,19 @@ Installation downloads Electron. The start command builds the renderer and deskt
 Reedar initially displays the text supplied by the feed. Before answering or summarizing, it fetches the linked HTML page and extracts the article text locally. The **要約する** button displays a streamed summary in the main reader; **フィード本文に戻る** restores the feed view. You can inspect the text supplied to the AI beneath the summary.
 
 If retrieval fails or produces less text than the feed, the assistant uses the saved feed text and identifies that limitation. Extraction does not execute JavaScript, use browser cookies, or bypass login/paywalls, and cannot guarantee complete text on every website. Follow-up questions reuse the retrieved source. Ordinary webpage URLs cannot yet be registered as feeds automatically.
+
+## Manage subscriptions
+
+Open **Organize feeds** (`フィードを整理`, the menu beside the sidebar's feed heading) to move or remove a subscription. Removed feeds disappear from reading views and stop refreshing. Their cached articles, stars, and conversations are retained; expand **削除済みのフィード** in the same dialog to restore them. Removing a feed stops its active AI responses and preserves partial text. Folder deletion is not implemented yet.
+
+Open **OPML import/export** (`OPML入出力`) at the bottom of the sidebar:
+
+- Select a UTF-8 `.opml` or `.xml` file, then choose **OPMLを読み込む**. Imports support up to 256 KB and 200 feed entries per file.
+- Existing subscriptions and duplicate entries are skipped. Removed subscriptions are restored. Valid feeds are saved even when other entries fail; the dialog shows each result and supports cancellation.
+- Folder membership is retained. Nested paths become a single folder name such as `Technology / Web`; paths longer than 60 characters fail for that entry. Empty folders are not created during import.
+- Choose **OPMLを書き出す** to download the active subscriptions and their folders. This is a subscription export, not a complete library backup: article text, stars, conversations, and removed feeds are excluded.
+
+External OPML inclusions are not followed. DTDs, entities, malformed XML, and private-network feed URLs are rejected. Import progress is available during the current app session; successfully registered subscriptions survive restart.
 
 ## Agent support
 
@@ -102,7 +116,7 @@ Your library is stored locally:
 
 The two modes use separate libraries. Data includes feeds, cached articles, folders, reading state, stars, and conversations. Files are protected by OS permissions and are **not encrypted**. Quit the app before backing up the data directory.
 
-When you send a question, the selected article text and that conversation are sent to the chosen AI provider through its CLI. Local storage does not make model inference local. Feed and image retrieval also makes network requests.
+When you send a question, the selected article text and that conversation are sent to the chosen AI provider through its CLI. Local storage does not make model inference local. Feed, article-page, and image retrieval also makes network requests.
 
 Reading sessions treat article content as untrusted input, restrict external tools, and reject permission escalation. The renderer sanitizes feed HTML and runs with Electron isolation and a content security policy. A session-authenticated loopback server checks request origins and hosts; network fetching rejects private destinations.
 
@@ -122,13 +136,15 @@ bun run checksums  # Write the archive checksum manifest
 
 Open the URL printed by `bun run dev`. The server uses a fresh session and an available port on each launch. Keep that URL private. This command does not watch files; restart it after source changes.
 
-Browser development accepts `REEDAR_DATA_DIR` to choose a data directory and `REEDAR_PORT` to choose a port. These settings do not change the desktop app's data location.
+Both desktop and browser development accept `REEDAR_DATA_DIR` to choose a separate library directory. Without it, the default locations above apply. Browser development also accepts `REEDAR_PORT` to choose a port. A separate data directory is useful for testing an empty library without changing your normal subscriptions.
+
+The [CI workflow](.github/workflows/ci.yml) runs these checks on pull requests and pushes to `main`, without live model requests. It is configured locally; hosted execution still needs a GitHub remote.
 
 Built with **Electron, React, TypeScript, and Bun**. Source lives in `src/main` (desktop host and local services), `src/ui` (reader interface), and `src/shared` (validated data contracts). See [Contributing](CONTRIBUTING.md) for the repository map and workflow.
 
 ## Scope
 
-This preview focuses on reading a local feed library and discussing individual articles. It does not yet include subscription deletion, OPML import/export, Inoreader or other service sync, mobile clients, automatic digests, or publicly released installers. Large-library performance has not been benchmarked.
+This preview focuses on reading a local feed library and discussing individual articles. It does not yet include folder deletion, scheduled refresh, full-library backup/restore, Inoreader or other service sync, mobile clients, automatic digests, or publicly released installers. Large-library performance has not been benchmarked.
 
 The [roadmap checklist](ROADMAP.md) tracks completed work, public-preview preparation, daily-reader improvements, and longer-term candidates.
 
