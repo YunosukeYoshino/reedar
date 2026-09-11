@@ -86,3 +86,36 @@ test("the conversation list shows the failure reason instead of claiming it is s
   await act(async () => stream?.onmessage?.({ data: JSON.stringify({ type: "snapshot", snapshot }) }));
   expect(window.document.querySelector(".activity-row p")?.textContent).toBe("Interrupted on restart");
 });
+
+
+test("summarizes in the article area, shows the supplied source and restores the excerpt", async () => {
+  const article = snapshot.state.articles[1];
+  if (!article) throw new Error("Missing fixture article");
+  const close = window.document.querySelector('[aria-label="AIパネルを閉じる"]');
+  if (close instanceof window.HTMLButtonElement) await act(async () => close.click());
+  const row = window.document.querySelector('[aria-label="未読：Second article"]');
+  if (!(row instanceof window.HTMLButtonElement)) throw new Error("Missing row");
+  await act(async () => row.click());
+  const button = window.document.querySelector('[aria-label="記事を要約"]');
+  expect(button instanceof window.HTMLButtonElement).toBe(true);
+  if (!(button instanceof window.HTMLButtonElement)) return;
+  await act(async () => button.click());
+  expect(actions.at(-1)).toEqual({ type: "chat.summarize", articleId: article.id, agent: "codex" });
+  expect(window.document.querySelector(".ai-panel")).toBeNull();
+  snapshot.state.conversations.push({ id: "summary", articleId: article.id, agent: "codex", source: { title: article.title, url: article.url, text: "Complete body including the final conclusion.", origin: "web", capturedAt: article.receivedAt }, messages: [{ id: "summary-answer", role: "assistant", purpose: "summary", sourceOrigin: "web", text: "## 要点\n全文に基づく要約。[危険](javascript:alert(1)) ![tracking](https://example.com/track.png)<script>alert(1)</script>", createdAt: article.receivedAt, state: { status: "completed" } }] });
+  await act(async () => stream?.onmessage?.({ data: JSON.stringify({ type: "snapshot", snapshot }) }));
+  expect(window.document.querySelector(".reader-summary")?.textContent).toContain("全文に基づく要約");
+  expect(window.document.querySelector(".reader-summary")?.textContent).toContain("リンク先本文");
+  expect(window.document.querySelector(".reader-summary details")?.textContent).toContain("final conclusion");
+  expect(window.document.querySelector(".reader-summary img, .reader-summary script, .reader-summary a[href^='javascript:']")).toBeNull();
+  expect(window.document.querySelector(".article-html")).toBeNull();
+  const back = window.document.querySelector('[aria-label="フィード本文に戻る"]');
+  if (!(back instanceof window.HTMLButtonElement)) throw new Error("Missing back button");
+  await act(async () => back.click());
+  expect(window.document.querySelector(".article-html")?.textContent).toBe("Second body");
+  const again = window.document.querySelector('[aria-label="記事を要約"]');
+  if (!(again instanceof window.HTMLButtonElement)) throw new Error("Missing summary button");
+  const count = actions.length;
+  await act(async () => again.click());
+  expect(actions).toHaveLength(count);
+});

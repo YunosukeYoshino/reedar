@@ -118,6 +118,21 @@ kbd { font: inherit; font-size: 9px; border: 1px solid #ffffff12; border-radius:
 .article-html table, .markdown table { display: block; overflow-x: auto; border-collapse: collapse; }
 .article-html td, .article-html th { border: 1px solid var(--border); padding: 6px; }
 .original-link { display: inline-flex; align-items: center; gap: 8px; color: #a69aa4; font-size: 11px; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px; }
+.summary-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 0 0 25px; }
+.summary-toolbar > span { color: var(--muted); font-size: 10px; }
+.summary-toggle { display: inline-flex; align-items: center; gap: 7px; color: var(--accent); background: #d5a17b13; border: 1px solid #d5a17b20; border-radius: 6px; padding: 8px 11px; font-size: 11px; }
+.summary-toggle:hover { background: #d5a17b20; }
+.summary-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+.summary-heading h2 { margin: 0; font-size: 16px; font-weight: 550; }
+.summary-heading > button { margin-left: auto; }
+.reader-summary .markdown { font-size: 14px; line-height: 2; }
+.reader-summary .markdown h1, .reader-summary .markdown h2, .reader-summary .markdown h3 { font-size: 17px; }
+.summary-stop { display: flex; align-items: center; gap: 7px; margin-top: 12px; }
+.summary-source { margin-top: 32px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: 11px; line-height: 1.8; }
+.summary-source summary { cursor: pointer; color: var(--secondary); }
+.summary-source details > div { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 16px; color: var(--secondary); font-size: 12px; }
+.source-caption { margin: 0 20px 12px; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.source-caption span { display: block; }
 .reader-empty { margin: auto; text-align: center; color: var(--muted); padding: 35px; }
 .empty-mark { color: #aaa1a0; margin-bottom: 26px; }
 .reader-empty h2 { font-size: 20px; font-weight: 500; letter-spacing: -.5px; color: #cac3cb; }
