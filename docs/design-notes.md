@@ -18,7 +18,7 @@ These observations led to a few priorities:
 - Track human reading state independently of AI execution.
 - Keep access to the original source alongside generated answers.
 
-Reedar's current preview uses text supplied by the feed. Reeder's full-text Reader View was a research reference, not an implemented Reedar feature.
+The initial article view uses feed-supplied text. Explicit AI requests retrieve and extract the linked article first, and a button above the body can replace the feed view with an inline summary.
 
 ## Agent launch support is not chat integration
 
@@ -35,7 +35,8 @@ flowchart LR
   F[RSS / Atom] --> L[Local library]
   L --> R[Read an article]
   R --> Q[Choose an agent and ask]
-  Q --> C[Restricted CLI session]
+  Q --> E[Extract linked article or mark feed fallback]
+  E --> C[Restricted CLI session]
   C --> A[Streamed answer and source link]
   A --> H[Saved article conversation]
   H --> Q
@@ -43,7 +44,7 @@ flowchart LR
 
 The preview supports direct RSS / Atom registration, folders, unread state, stars, local search, and conversations about one article at a time. Codex and Claude Code have reading adapters; Codex uses GPT-5.3-Codex-Spark. Antigravity is a detected integration target with reading disabled pending tool isolation.
 
-The initial research also considered multi-article comparisons, full-text extraction, translation shortcuts, scheduled digests, and handing an article to an implementation task. Those are ideas, not commitments or implemented features. Inoreader and other subscription-service sync were excluded from the initial scope to avoid requiring an additional service dependency.
+The initial research also considered multi-article comparisons, translation shortcuts, scheduled digests, and handing an article to an implementation task. Those are ideas, not commitments or implemented features. Inoreader and other subscription-service sync were excluded from the initial scope to avoid requiring an additional service dependency.
 
 ## Keep provider-specific behavior at the boundary
 
@@ -51,7 +52,7 @@ The application shares a small model of requests, response text, execution state
 
 A browser page alone cannot launch a user's local CLI. The Electron host and local development server provide that process boundary. Structured CLI interfaces are preferred over scraping terminal text.
 
-Reedar does not assume that sessions can be transferred between providers. Each article-agent pair has its own conversation. The source snapshot is captured when that conversation begins, so later feed updates do not silently replace the evidence behind previous answers.
+Reedar does not assume that sessions can be transferred between providers. Each article-agent pair has its own conversation. The first successful linked-page extraction is saved as the conversation source and reused by follow-ups. Feed updates do not replace it. Older excerpt conversations are upgraded on their next question, retaining the original source in `previousSource`; new answers record whether their source came from the feed or linked page. Failed retrievals can be retried on the next explicit request.
 
 ## Keep reading separate from acting
 
@@ -68,7 +69,7 @@ This is also why Antigravity remains pending: the tested connection did not esta
 | Direct RSS / Atom fetching | A library without an additional sync subscription | No cross-device or subscription-service sync |
 | Local JSON storage | Simple ownership, backup, and inspection | No encryption or multi-user coordination; large-library limits remain unmeasured |
 | Existing CLI authentication | Reuses the user's agent access | Depends on CLI versions, available models, and account limits |
-| Feed-supplied text | Predictable source and fewer retrieval steps | Excerpt-only feeds produce excerpt-only context |
+| On-demand article extraction | Linked-page context while the initial reader stays fast | Some sites require JavaScript or authentication; failures use an explicitly marked feed fallback |
 | Explicit requests per article | Clear consent and controlled usage | No automatic summaries or background digests |
 | Restricted reading sessions | Limits what untrusted content can cause | New agents require more than executable detection |
 

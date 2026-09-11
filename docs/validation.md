@@ -79,7 +79,7 @@ Manual shutdown and restart checks preserved articles, folders, unread state, st
 
 ## Remaining limits
 
-- Feed excerpts are used as provided; full-page extraction is absent.
+- Article extraction is available on explicit AI requests; JavaScript-only, blocked, authenticated, and paywalled pages may fall back to feed text.
 - CLI and account compatibility can change and must be revalidated.
 - Large feed libraries and very long histories have not been performance-tested.
 - A crash can lose unsaved response deltas; normal stop and shutdown preserve partial output.
@@ -96,3 +96,16 @@ After normally quitting the development app, the packaged app launched successfu
 `codesign --verify --deep --strict` passed for the ad-hoc-signed bundle. DMG verification and ZIP integrity checks passed. The SHA-256 manifest was generated and verified. The ASAR root contained only `dist`, `node_modules`, and `package.json`; checks found no local data, Git directory, source/test tree, or release outputs. Electron and Chromium license notices were present in `Contents/Resources/licenses/`.
 
 The automated suite remained at 37 passing tests, with type checking and builds passing. The manually triggered GitHub Actions workflow parsed successfully and has read-only repository contents permission; it has not run on GitHub. Intel execution, Developer ID signing, notarization, and downloaded-app Gatekeeper approval on another Mac remain unverified. See [Distribution](distribution.md) for commands and release requirements.
+
+
+## Linked article text and inline summaries — September 12, 2026
+
+Version 0.1.1 retrieves the linked HTML article before explicit AI requests. Readability extracts the article using an inert Linkedom DOM; the initial feed display remains available. Retrieval failures use a marked feed fallback, and successful retrieval is retained for follow-up questions. Legacy conversations retain their original excerpt snapshot when upgraded.
+
+The automated suite passed **45 tests / 139 assertions**, with type checking and renderer/desktop builds passing. Added coverage checks article opening and final paragraphs, removal of navigation/scripts, source reuse, marked retrieval failure, cancellation during retrieval, legacy-source preservation, empty-source failure, inline summary rendering, safe Markdown, and returning to the feed view without a second model request. React Doctor scored 84/100 for the changed UI with no errors; remaining warnings concern component control-flow complexity and existing state/iteration patterns.
+
+A live packaged-app check used the Publickey article about .NET 11 RC1. Its feed text contained **242 characters**; the extracted linked article contained **2,139 characters**, including the final WebAssembly/CoreCLR section and release-timing paragraph. The extracted endpoint was compared with the public page. The app upgraded the existing Codex conversation, retained the 242-character original source, and completed a GPT-5.3-Codex-Spark summary in the main article pane. The answer included JIT, AOT, and WebAssembly content absent from the excerpt. The UI showed the 2,139-character source, expanded the supplied text, returned to the feed excerpt, and reopened the saved summary without another model run. The existing library remained available after the update.
+
+Extraction remains best effort: blocked, authenticated, paywalled, non-HTML, and JavaScript-only pages may not yield an article. Text is not silently truncated to fit the model; the existing 180,000-character prompt limit fails explicitly. Automated tests cover fallback and cancellation; the live model check covered the successful Codex path.
+
+The Apple Silicon 0.1.1 app, DMG, and ZIP were rebuilt locally. Distribution remains an ad-hoc signed, unnotarized preview; no GitHub publication was performed.

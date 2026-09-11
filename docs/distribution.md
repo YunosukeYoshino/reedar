@@ -17,13 +17,13 @@ bun run checksums
 
 The packaging command rebuilds the app, creates the ICNS icon using macOS `sips` and `iconutil`, and invokes electron-builder with publishing disabled.
 
-For version 0.1.0, Apple Silicon outputs are:
+For version 0.1.1, Apple Silicon outputs are:
 
 ```text
 release/
   mac-arm64/Reedar.app
-  Reedar-0.1.0-mac-arm64-preview.dmg
-  Reedar-0.1.0-mac-arm64-preview.zip
+  Reedar-0.1.1-mac-arm64-preview.dmg
+  Reedar-0.1.1-mac-arm64-preview.zip
   SHA256SUMS.txt
 ```
 

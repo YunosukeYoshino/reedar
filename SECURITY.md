@@ -11,7 +11,7 @@ A useful private report includes the affected commit, macOS and CLI versions, re
 ## Security boundaries
 
 - **Article rendering:** feed HTML is sanitized before display. The Electron renderer disables Node integration and uses context isolation, sandboxing, and a content security policy.
-- **Network access:** feed and image requests reject local and private destinations, including resolved addresses and redirects. Images are retrieved through a constrained local proxy.
+- **Network access:** feed, article-page, and image requests reject local and private destinations, including resolved addresses and redirects. Images are retrieved through a constrained local proxy. Article extraction uses an inert DOM, executes no page scripts, and sends no browser cookies. Page retrieval is limited to 5 MB with a 25-second overall network deadline; extracted text is treated as untrusted input.
 - **Local server:** the host binds to loopback and uses a per-launch authenticated session. Host and Origin checks reject unexpected callers. The printed launch URL is a credential and must remain private.
 - **Agent execution:** the application supplies the selected article and conversation as quoted, untrusted data. Supported reading adapters restrict tools and reject permission escalation. Authentication stays with the installed CLI; Reedar does not copy tokens into model prompts or rewrite global CLI settings.
 - **Antigravity:** installation detection is available, but article execution is disabled. The tested CLI did not enforce the required per-session tool restrictions.
@@ -22,6 +22,6 @@ These controls do not make arbitrary future CLI versions safe automatically. Cha
 
 Library files are local JSON protected by OS permissions, not encryption. They contain cached article text and conversation history. Backups should receive the same protection as the original files.
 
-Selected article text and conversation history leave the Mac when you ask a cloud-backed CLI to answer. Provider account settings, retention, and service terms apply to that processing. Feed and image requests also contact external hosts.
+Selected article text and conversation history leave the Mac when you ask a cloud-backed CLI to answer. Provider account settings, retention, and service terms apply to that processing. Feed, article-page, and image requests also contact external hosts. Retrieved article text is stored in the local conversation snapshot.
 
 Reedar does not protect against a compromised OS account, a malicious replacement CLI executable, or other software running with equivalent access. Only point executable overrides at CLIs you trust. Do not expose the local server through a public interface or tunnel.

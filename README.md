@@ -49,7 +49,9 @@ Installation downloads Electron. The start command builds the renderer and deskt
 2. Select an article to read it. Use the toolbar to star it or mark it unread.
 3. Open **Read with AI** (`AIと読む`), choose an agent, and send a question or use the summary shortcut.
 
-Reedar displays and sends the text supplied by the feed. If a feed contains only an excerpt, the assistant receives that excerpt. Full-page extraction and automatic feed discovery from ordinary web pages are not implemented.
+Reedar initially displays the text supplied by the feed. Before answering or summarizing, it fetches the linked HTML page and extracts the article text locally. The **要約する** button displays a streamed summary in the main reader; **フィード本文に戻る** restores the feed view. You can inspect the text supplied to the AI beneath the summary.
+
+If retrieval fails or produces less text than the feed, the assistant uses the saved feed text and identifies that limitation. Extraction does not execute JavaScript, use browser cookies, or bypass login/paywalls, and cannot guarantee complete text on every website. Follow-up questions reuse the retrieved source. Ordinary webpage URLs cannot yet be registered as feeds automatically.
 
 ## Agent support
 
@@ -124,7 +126,7 @@ Built with **Electron, React, TypeScript, and Bun**. Source lives in `src/main` 
 
 ## Scope
 
-This preview focuses on reading a local feed library and discussing individual articles. It does not yet include subscription deletion, OPML import/export, full-page extraction, Inoreader or other service sync, mobile clients, automatic digests, or publicly released installers. Large-library performance has not been benchmarked.
+This preview focuses on reading a local feed library and discussing individual articles. It does not yet include subscription deletion, OPML import/export, Inoreader or other service sync, mobile clients, automatic digests, or publicly released installers. Large-library performance has not been benchmarked.
 
 Normal shutdown preserves partial answers. A crash may lose deltas written since the last save; interrupted responses are marked as failed on the next launch. Corrupt storage produces an error instead of being replaced with an empty library.
 
