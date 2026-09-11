@@ -194,6 +194,43 @@ describe("reading workflow", () => {
     await engine.close();
   });
 
+  test("imports valid OPML feeds, skips duplicates and reports individual failures", async () => {
+    const { engine, store, article } = await setup("opml-import", async () => {});
+    const xml = `<opml version="2.0"><head/><body><outline text="Imported"><outline text="New feed" xmlUrl="https://example.org/rss"/><outline text="Duplicate" xmlUrl="https://example.org/rss"/><outline text="Existing" xmlUrl="https://example.com/rss"/><outline text="Private" xmlUrl="http://127.0.0.1/rss"/></outline></body></opml>`;
+    await engine.dispatch({ type: "opml.import", xml });
+    await engine.settle();
+    expect(engine.snapshot.opmlImport?.status).toBe("completed");
+    expect(engine.snapshot.opmlImport?.results.map((result) => result.status).sort()).toEqual(["failed", "imported", "skipped", "skipped"]);
+    const imported = store.state.feeds.find((feed) => feed.url === "https://example.org/rss");
+    expect(imported?.folderId).toBe(store.state.folders.find((folder) => folder.name === "Imported")?.id);
+    expect(store.state.feeds).toHaveLength(2);
+    expect(store.article(article.id).read).toBe(false);
+    await engine.close();
+  });
+
+  test("stopping an OPML import aborts retrieval and does not add late results", async () => {
+    let started: (() => void) | undefined;
+    const ready = new Promise<void>((resolve) => { started = resolve; });
+    const store = await Store.open(join(directory, "stop-opml.json"));
+    const engine = new Engine(store, directory, {
+      run: async () => {}, connect: async (agent) => ({ agent, installed: false, status: "unavailable", detail: "fixture" }),
+      fetchArticleText: async () => ({ text: "body", url: "https://example.com/a" }),
+      fetchFeed: async (url, folderId, signal) => {
+        started?.();
+        await new Promise<void>((resolve) => { signal?.addEventListener("abort", () => resolve(), { once: true }); });
+        return parseFeed(xml, url, folderId);
+      },
+    });
+    await engine.dispatch({ type: "opml.import", xml: '<opml version="2.0"><head/><body><outline text="Late" xmlUrl="https://example.com/rss"/></body></opml>' });
+    await ready;
+    await expect(engine.dispatch({ type: "opml.import", xml: '<opml version="2.0"><head/><body/></opml>' })).rejects.toThrow("実行中");
+    await engine.dispatch({ type: "opml.stop" });
+    await engine.settle();
+    expect(engine.snapshot.opmlImport?.status).toBe("cancelled");
+    expect(store.state.feeds).toHaveLength(0);
+    await engine.close();
+  });
+
   test("refresh failure preserves cached articles and reports the feed error", async () => {
     const { engine, store } = await setup("refresh", async () => {}, true);
     await engine.dispatch({ type: "refresh" });

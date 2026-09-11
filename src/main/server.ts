@@ -6,6 +6,7 @@ import { extname, join, resolve, sep } from "node:path";
 import { actionSchema } from "../shared/schema";
 import { Engine } from "./engine";
 import { fetchPublic } from "./network";
+import { serializeOpml } from "./opml";
 import { Store } from "./store";
 
 type Options = { dataDirectory: string; staticDirectory: string; port?: number; engine?: Engine };
@@ -24,13 +25,13 @@ function matchesToken(received: string | undefined, token: string) {
   return input.length === expected.length && timingSafeEqual(input, expected);
 }
 
-export async function requestBody(request: AsyncIterable<unknown>) {
+export async function requestBody(request: AsyncIterable<unknown>, maximumBytes = 32_000) {
   const chunks: Buffer[] = [];
   let length = 0;
   for await (const chunk of request) {
     if (!Buffer.isBuffer(chunk)) throw new Error("入力形式が正しくありません。");
     length += chunk.length;
-    if (length > 32_000) throw new Error("入力が大きすぎます。");
+    if (length > maximumBytes) throw new Error("入力が大きすぎます。");
     chunks.push(chunk);
   }
   return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
@@ -71,9 +72,14 @@ export async function startServer(options: Options) {
     if (request.headers.origin && request.headers.origin !== origin) return json(response, 403, { error: "外部ページからの操作は許可されていません。" });
 
     if (request.method === "GET" && url.pathname === "/api/state") return json(response, 200, engine.snapshot);
+    if (request.method === "GET" && url.pathname === "/api/opml") {
+      response.writeHead(200, { "Content-Type": "text/x-opml; charset=utf-8", "Content-Disposition": 'attachment; filename="Reedar.opml"' });
+      response.end(serializeOpml(store.state.feeds, store.state.folders));
+      return;
+    }
     if (request.method === "POST" && url.pathname === "/api/action") {
       if (request.headers.origin !== origin || !request.headers["content-type"]?.startsWith("application/json")) return json(response, 403, { error: "この操作はReedarの画面から実行してください。" });
-      const result = actionSchema.safeParse(await requestBody(request));
+      const result = actionSchema.safeParse(await requestBody(request, 1024 * 1024));
       if (!result.success) return json(response, 400, { error: "入力内容を確認してください。" });
       await engine.dispatch(result.data);
       return json(response, 200, { ok: true });

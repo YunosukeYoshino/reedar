@@ -87,10 +87,19 @@ export const connectionSchema = z.object({
 });
 export type Connection = z.infer<typeof connectionSchema>;
 
+export const opmlImportSchema = z.object({
+  status: z.enum(["running", "completed", "cancelled", "failed"]),
+  total: z.number().int().nonnegative(),
+  results: z.array(z.object({ title: z.string(), url: z.string(), status: z.enum(["imported", "skipped", "failed"]), detail: z.string() })),
+  error: z.string().optional(),
+});
+export type OpmlImport = z.infer<typeof opmlImportSchema>;
+
 export const snapshotSchema = z.object({
   state: stateSchema,
   connections: z.array(connectionSchema),
   refreshing: z.boolean(),
+  opmlImport: opmlImportSchema.nullable().optional(),
 });
 export type Snapshot = z.infer<typeof snapshotSchema>;
 
@@ -108,6 +117,8 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("folder.save"), id: z.string().nullable(), name: z.string().trim().min(1).max(60) }),
   z.object({ type: z.literal("article.read"), id: z.string(), read: z.boolean() }),
   z.object({ type: z.literal("article.star"), id: z.string(), starred: z.boolean() }),
+  z.object({ type: z.literal("opml.import"), xml: z.string().min(1).max(262_144) }),
+  z.object({ type: z.literal("opml.stop") }),
   z.object({ type: z.literal("refresh") }),
   z.object({ type: z.literal("connections.refresh") }),
   z.object({ type: z.literal("chat.send"), articleId: z.string(), agent: agentSchema, text: z.string().trim().min(1).max(4000) }),

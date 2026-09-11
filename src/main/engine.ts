@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
-import type { Action, Connection, Conversation, Snapshot, Update } from "../shared/schema";
+import type { Action, Connection, Conversation, OpmlImport, Snapshot, Update } from "../shared/schema";
 import { agentSchema, codexModel } from "../shared/schema";
 import { agentError, AuthenticationRequired, connection, runReader } from "./agents/reader";
 import { loadArticleText } from "./article-text";
 import { loadFeed } from "./feeds";
+import { parseOpml } from "./opml";
 import { publicUrl } from "./network";
 import { Store } from "./store";
 
@@ -14,6 +15,8 @@ const defaults: Dependencies = { fetchArticleText: loadArticleText, fetchFeed: l
 export class Engine {
   connections: Connection[] = agentSchema.options.map((agent) => ({ agent, installed: false, status: "checking", detail: "接続を確認しています" }));
   refreshing = false;
+  opmlImport: OpmlImport | null = null;
+  private importJob: { controller: AbortController; done: Promise<void> } | undefined;
   private listeners = new Set<(update: Update) => void>();
   private jobs = new Map<string, { controller: AbortController; done: Promise<void> }>();
 
@@ -24,7 +27,7 @@ export class Engine {
     await this.refreshConnections();
   }
 
-  get snapshot(): Snapshot { return { state: this.store.state, connections: this.connections, refreshing: this.refreshing }; }
+  get snapshot(): Snapshot { return { state: this.store.state, connections: this.connections, refreshing: this.refreshing, opmlImport: this.opmlImport }; }
 
   subscribe(listener: (update: Update) => void) { this.listeners.add(listener); return () => this.listeners.delete(listener); }
   private emit(update: Update) { for (const listener of this.listeners) listener(update); }
@@ -76,6 +79,8 @@ export class Engine {
       case "folder.save": this.store.saveFolder(action.id, action.name); break;
       case "article.read": this.store.article(action.id).read = action.read; break;
       case "article.star": this.store.article(action.id).starred = action.starred; break;
+      case "opml.import": return this.importOpml(action.xml);
+      case "opml.stop": this.importJob?.controller.abort(); return;
       case "refresh": return this.refreshFeeds();
       case "connections.refresh": return this.refreshConnections();
       case "chat.send": return this.send(action.articleId, action.agent, action.text);
@@ -84,6 +89,60 @@ export class Engine {
     }
     await this.store.save();
     this.changed();
+  }
+
+  private async importOpml(xml: string) {
+    if (this.importJob) throw new Error("OPMLの読み込みは実行中です。");
+    const entries = await parseOpml(xml);
+    if (this.importJob) throw new Error("OPMLの読み込みは実行中です。");
+    const report: OpmlImport = { status: "running", total: entries.length, results: [] };
+    this.opmlImport = report;
+    this.changed();
+    const controller = new AbortController();
+    const seen = new Set<string>();
+    const done = (async () => {
+      await Promise.resolve();
+      try {
+        for (let offset = 0; offset < entries.length && !controller.signal.aborted; offset += 4) {
+          await Promise.all(entries.slice(offset, offset + 4).map(async (entry) => {
+            try {
+              let url: string;
+              try { url = publicUrl(entry.url).href; }
+              catch { report.results.push({ ...entry, status: "failed", detail: "公開HTTP/HTTPSのフィードURLではありません。" }); return; }
+              if (seen.has(url)) { report.results.push({ ...entry, status: "skipped", detail: "OPML内で重複しています。" }); return; }
+              seen.add(url);
+              const existing = this.store.state.feeds.find((feed) => feed.url === url);
+              if (existing && !existing.removedAt) { report.results.push({ ...entry, status: "skipped", detail: "登録済みです。" }); return; }
+              if (entry.folderName && entry.folderName.length > 60) { report.results.push({ ...entry, status: "failed", detail: "フォルダ名を60文字以内にしてください。" }); return; }
+              const removedAt = existing?.removedAt;
+              const result = existing ? { feed: existing, articles: [] } : await this.dependencies.fetchFeed(url, null, controller.signal);
+              if (controller.signal.aborted) return;
+              const current = this.store.state.feeds.find((feed) => feed.url === url);
+              if (current && (!current.removedAt || current.removedAt !== removedAt)) {
+                report.results.push({ ...entry, status: "skipped", detail: "読み込み中に登録状態が変更されました。" }); return;
+              }
+              let folderId: string | null = null;
+              if (entry.folderName) {
+                let folder = this.store.state.folders.find((folder) => folder.name === entry.folderName);
+                if (!folder) { this.store.saveFolder(null, entry.folderName); folder = this.store.state.folders.find((folder) => folder.name === entry.folderName); }
+                folderId = folder?.id ?? null;
+              }
+              this.store.mergeFeed({ ...result.feed, title: entry.title || result.feed.title, folderId, removedAt: undefined }, result.articles);
+              await this.store.save();
+              report.results.push({ ...entry, status: "imported", detail: existing ? "復元しました。" : "登録しました。" });
+            } catch {
+              if (!controller.signal.aborted) report.results.push({ ...entry, status: "failed", detail: "フィードを取得・保存できませんでした。URLと接続を確認してください。" });
+            } finally { this.changed(); }
+          }));
+        }
+        report.status = controller.signal.aborted ? "cancelled" : "completed";
+      } catch {
+        report.status = "failed";
+        report.error = "OPMLの読み込みを完了できませんでした。登録済みのフィードは保持されています。";
+      } finally { this.importJob = undefined; this.changed(); }
+    })();
+    this.importJob = { controller, done };
+    void done.catch(() => {});
   }
 
   private async refreshFeeds() {
@@ -191,9 +250,10 @@ export class Engine {
     this.changed();
   }
 
-  async settle() { await Promise.all([...this.jobs.values()].map((job) => job.done)); }
+  async settle() { await Promise.all([...this.jobs.values()].map((job) => job.done).concat(this.importJob ? [this.importJob.done] : [])); }
 
   async close() {
+    this.importJob?.controller.abort();
     for (const job of this.jobs.values()) job.controller.abort();
     await this.settle();
     await this.store.save();

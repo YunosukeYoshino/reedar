@@ -76,6 +76,25 @@ describe("local reader boundary", () => {
     expect(status).toBe(200);
     expect(runtime.engine.store.state.folders.at(-1)?.name).toBe("日本語");
   });
+  test("exports only active subscriptions through the authenticated download endpoint", async () => {
+    expect((await fetch(`${runtime.origin}/api/opml`)).status).toBe(401);
+    runtime.engine.store.state.feeds.push({ id: "opml", url: "https://example.com/rss?a=1&b=2", title: "News & updates", siteUrl: "https://example.com", folderId: null, updatedAt: null, error: null });
+    runtime.engine.store.state.feeds.push({ id: "removed", url: "https://example.com/removed", title: "Removed", siteUrl: "https://example.com", folderId: null, updatedAt: null, error: null, removedAt: "now" });
+    const response = await fetch(`${runtime.origin}/api/opml`, { headers: { Cookie: cookie } });
+    expect(response.headers.get("content-disposition")).toContain('filename="Reedar.opml"');
+    const body = await response.text();
+    expect(body).toContain("https://example.com/rss?a=1&amp;b=2");
+    expect(body).not.toContain("https://example.com/removed");
+  });
+
+  test("accepts a bounded OPML file larger than the ordinary form-body limit", async () => {
+    const xml = `<opml version="2.0"><head><title>${"x".repeat(40_000)}</title></head><body/></opml>`;
+    const response = await fetch(`${runtime.origin}/api/action`, { method: "POST", headers: { Cookie: cookie, Origin: runtime.origin, "Content-Type": "application/json" }, body: JSON.stringify({ type: "opml.import", xml }) });
+    expect(response.status).toBe(200);
+    await runtime.engine.settle();
+    expect(runtime.engine.snapshot.opmlImport?.status).toBe("completed");
+  });
+
   test("rejects malformed Unicode launch keys as unauthenticated", async () => {
     const response = await fetch(`${runtime.origin}/?key=${encodeURIComponent("é".repeat(64))}`);
     expect(response.status).toBe(401);

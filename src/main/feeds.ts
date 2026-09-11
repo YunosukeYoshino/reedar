@@ -73,8 +73,8 @@ export async function parseFeed(xml: string, url: string, folderId: string | nul
   return { feed, articles };
 }
 
-export async function loadFeed(url: string, folderId: string | null) {
-  const result = await fetchPublic(url);
+export async function loadFeed(url: string, folderId: string | null, signal?: AbortSignal) {
+  const result = await fetchPublic(url, 0, signal);
   try { return await parseFeed(result.body.toString("utf8"), url, folderId); }
   catch (error) {
     if (error instanceof Error && error.message.includes("外部エンティティ")) throw error;
