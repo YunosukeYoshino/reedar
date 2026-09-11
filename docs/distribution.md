@@ -4,6 +4,8 @@ Reedar can be packaged as a `.app`, a drag-to-Applications DMG, and a ZIP archiv
 
 The current configuration produces **ad-hoc-signed, unnotarized preview builds**. These are not Developer ID releases. macOS may block a downloaded preview, and a successful launch on the build machine does not establish Gatekeeper approval on another Mac.
 
+The verified preview scope is **macOS on Apple Silicon with Codex / GPT-5.3-Codex-Spark**. Successful Claude Code reading, Antigravity reading, Intel execution, and installation on another Mac are not verified; Antigravity article submission remains disabled. Include this scope and the signing limitations in every preview's release notes.
+
 ## Build locally
 
 Use macOS with Bun and the requirements listed in [Contributing](../CONTRIBUTING.md).
@@ -72,6 +74,6 @@ Do not store certificates, passwords, or API keys in the repository or upload th
 
 The package configuration allows the built `dist/` application and its package manifest. electron-builder also includes production dependencies. It does not include the local library, Git checkout, tests, or CLI login directories. Agent CLIs are discovered on the recipient's machine and are not bundled.
 
-Electron's license and Chromium third-party notices are copied to `Reedar.app/Contents/Resources/licenses/`. Production dependency license files remain within `app.asar`. The generated icon's source prompt is recorded in [assets/README.md](../assets/README.md).
+Reedar's MIT license, Electron's license, and Chromium third-party notices are copied to `Reedar.app/Contents/Resources/licenses/`. Production dependency license files remain within `app.asar`. The generated icon's source prompt is recorded in [assets/README.md](../assets/README.md).
 
-The project source license has not been selected yet. No open-source license has been added as part of this packaging work.
+The project uses the [MIT License](../LICENSE). Rebuild the archives from the intended release commit before publication so the package contains the current license and metadata.

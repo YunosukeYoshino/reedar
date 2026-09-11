@@ -4,6 +4,14 @@ Current baseline: **0.1.1**, September 12, 2026. Reedar runs locally on macOS wi
 
 Checked items are implemented and validated within the scope stated. Unchecked items are proposed work, not release-date commitments. The sections below have separate completion criteria: daily-reader improvements and additional providers do not all need to ship before a first public preview.
 
+## Recommended minimum scope
+
+For the first round of outside testing, prioritize **automatic PR checks** and **a fresh installation on another Apple Silicon Mac**. The license and preview limitations are now documented; repository and release publication remain separate outstanding actions. Other reader features can follow a clearly labeled early preview.
+
+For the next small product release, prioritize **subscription removal** and **OPML import/export**: users need to correct their library and move subscriptions in and out. Folder cleanup can follow subscription removal. Automatic refresh is the next convenience improvement; service sync, more providers, and automatic updates can wait.
+
+The detailed checkboxes below remain the source of status for these priorities.
+
 ## Available now
 
 - [x] Three-pane reader with direct RSS / Atom subscriptions and manual refresh.
@@ -23,7 +31,8 @@ Evidence and provider-specific limits: [Validation](docs/validation.md).
 
 The next distribution milestone is a discoverable source repository and an accurately described downloadable preview.
 
-- [ ] **Choose the source license.** Add the selected `LICENSE` and matching project metadata; a license has not been selected yet.
+- [x] **Choose the source license.** MIT license added with matching project metadata and packaging configuration.
+- [x] **State preview limitations.** README and distribution notes identify Apple Silicon / Codex verification, ad-hoc signing, missing notarization, and unverified installation on another Mac.
 - [ ] **Publish the repository.** Configure its GitHub remote and public project information, then publish the intended source revision.
 - [ ] **Run checks on pull requests.** Add automatic typecheck, test, and build CI. The existing workflow is manual only.
 - [ ] **Validate hosted packaging.** Run the existing macOS workflow on GitHub and verify its downloaded artifacts. Local packaging already works.

@@ -8,7 +8,9 @@ Reedar is a desktop RSS reader for macOS, inspired by the familiar three-pane re
 
 Bring your own CLI login. Reedar uses the agent's existing service access and usage allowance; it does not require a separate model API key.
 
-> **Early preview.** Run from source on macOS. The interface and reading assistant currently use Japanese. Codex reading is verified with GPT-5.3-Codex-Spark; other integrations have different levels of support.
+> **Early preview for macOS on Apple Silicon.** Codex reading is verified with GPT-5.3-Codex-Spark. Claude Code's successful live reading is unverified, and Antigravity reading is disabled. The interface and reading assistant currently use Japanese.
+>
+> **Download limitations:** the local DMG / ZIP previews use ad-hoc signing and are **not notarized**. macOS may block a downloaded app. Installation on another Mac and Intel execution have not been verified. See [Distribution](docs/distribution.md) before sharing a build.
 
 [Getting started](#getting-started) · [Agent support](#agent-support) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md) · [Validation](docs/validation.md) · [Distribution](docs/distribution.md)
 
@@ -137,3 +139,7 @@ Normal shutdown preserves partial answers. A crash may lose deltas written since
 Bug reports, focused fixes, and documentation improvements are welcome. Start with the [contribution guide](CONTRIBUTING.md), [design notes](docs/design-notes.md), and [validation record](docs/validation.md).
 
 Reedar is an independent project inspired by Reeder's reading layout. It is not affiliated with Reeder or the connected AI providers.
+
+## License
+
+Reedar is available under the [MIT License](LICENSE). Third-party dependencies retain their own licenses and notices.

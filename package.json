@@ -1,6 +1,7 @@
 {
   "name": "reedar",
   "version": "0.1.1",
+  "license": "MIT",
   "private": true,
   "description": "A quiet RSS reader with your own coding agents.",
   "type": "module",
