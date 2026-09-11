@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useState } from "react";
 import { AlertCircle, X } from "lucide-react";
-import type { Agent, Article, Conversation } from "../shared/schema";
+import type { Agent, Article, Conversation, ReaderState } from "../shared/schema";
 import { Sidebar } from "./Sidebar";
 import type { Filter, Scope } from "./Sidebar";
 import { ArticleList } from "./ArticleList";
@@ -8,6 +8,14 @@ import { Reader } from "./Reader";
 import { AiPanel } from "./AiPanel";
 import { LibraryDialogs } from "./LibraryDialogs";
 import { useReader } from "./use-reader";
+
+function activeLibrary(state: ReaderState): ReaderState {
+  const feeds = state.feeds.filter((feed) => !feed.removedAt);
+  const feedIds = new Set(feeds.map((feed) => feed.id));
+  const articles = state.articles.filter((article) => feedIds.has(article.feedId));
+  const articleIds = new Set(articles.map((article) => article.id));
+  return { ...state, feeds, articles, conversations: state.conversations.filter((conversation) => articleIds.has(conversation.articleId)) };
+}
 
 export function App() {
   const { snapshot, connected, error, setError, act, perform } = useReader();
@@ -19,7 +27,7 @@ export function App() {
   const [agent, setAgent] = useState<Agent>("codex");
   const [aiOpen, setAiOpen] = useState(false);
   const [folderId, setFolderId] = useState<string | null>(null);
-  const state = snapshot?.state;
+  const state = snapshot ? activeLibrary(snapshot.state) : undefined;
   const article = state?.articles.find((item) => item.id === selectedId);
   const feed = state?.feeds.find((item) => item.id === article?.feedId);
   const feedIds = new Set(state?.feeds.filter((item) => scope.type === "all" || (scope.type === "feed" ? item.id === scope.id : item.folderId === scope.id)).map((item) => item.id));
@@ -43,6 +51,6 @@ export function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
-  if (!snapshot) return <div className="loading-screen"><span className="loading-dot" /><p>{connected ? "ライブラリを読み込んでいます…" : "Reedarに接続しています…"}</p>{error ? <p role="alert">{error}</p> : null}</div>;
-  return <><main className={`app-shell ${navigator.userAgent.includes("Electron") ? "desktop" : ""} ${aiOpen && article ? "ai-is-open" : ""}`}><Sidebar state={snapshot.state} scope={scope} filter={filter} refreshing={snapshot.refreshing} select={(value, nextFilter) => { setScope(value); setFilter(nextFilter ?? "all"); setSearch(""); setSelectedId(null); }} perform={perform} editFolder={setFolderId} /><ArticleList title={title} articles={articles} feeds={snapshot.state.feeds} selectedId={selectedId} filter={filter} setFilter={(value) => { setFilter(value); setSelectedId(null); }} search={search} setSearch={setSearch} onSelect={selectArticle} /><Reader agent={agent} conversation={conversation} act={act} article={article} feed={feed} aiOpen={aiOpen} toggleAi={() => setAiOpen(!aiOpen)} perform={perform} previous={() => move(-1)} next={() => move(1)} hasPrevious={index > 0} hasNext={index < articles.length - 1} />{aiOpen && article ? <AiPanel key={`${article.id}:${agent}`} article={article} agent={agent} setAgent={setAgent} conversation={conversation} connections={snapshot.connections} act={act} perform={perform} close={() => setAiOpen(false)} /> : null}</main><LibraryDialogs snapshot={snapshot} folderId={folderId} act={act} perform={perform} openConversation={openConversation} />{error || !connected ? <div className="toast" role="alert"><AlertCircle size={16} /><span>{error ?? "接続が切れました。再接続しています…"}</span>{error ? <button className="icon-button" aria-label="通知を閉じる" onClick={() => setError(null)}><X size={14} /></button> : null}</div> : null}</>;
+  if (!snapshot || !state) return <div className="loading-screen"><span className="loading-dot" /><p>{connected ? "ライブラリを読み込んでいます…" : "Reedarに接続しています…"}</p>{error ? <p role="alert">{error}</p> : null}</div>;
+  return <><main className={`app-shell ${navigator.userAgent.includes("Electron") ? "desktop" : ""} ${aiOpen && article ? "ai-is-open" : ""}`}><Sidebar state={state} scope={scope} filter={filter} refreshing={snapshot.refreshing} select={(value, nextFilter) => { setScope(value); setFilter(nextFilter ?? "all"); setSearch(""); setSelectedId(null); }} perform={perform} editFolder={setFolderId} /><ArticleList title={title} articles={articles} feeds={state.feeds} selectedId={selectedId} filter={filter} setFilter={(value) => { setFilter(value); setSelectedId(null); }} search={search} setSearch={setSearch} onSelect={selectArticle} /><Reader agent={agent} conversation={conversation} act={act} article={article} feed={feed} aiOpen={aiOpen} toggleAi={() => setAiOpen(!aiOpen)} perform={perform} previous={() => move(-1)} next={() => move(1)} hasPrevious={index > 0} hasNext={index < articles.length - 1} />{aiOpen && article ? <AiPanel key={`${article.id}:${agent}`} article={article} agent={agent} setAgent={setAgent} conversation={conversation} connections={snapshot.connections} act={act} perform={perform} close={() => setAiOpen(false)} /> : null}</main><LibraryDialogs snapshot={{ ...snapshot, state }} removedFeeds={snapshot.state.feeds.filter((feed) => feed.removedAt)} folderId={folderId} act={act} perform={perform} openConversation={openConversation} />{error || !connected ? <div className="toast" role="alert"><AlertCircle size={16} /><span>{error ?? "接続が切れました。再接続しています…"}</span>{error ? <button className="icon-button" aria-label="通知を閉じる" onClick={() => setError(null)}><X size={14} /></button> : null}</div> : null}</>;
 }

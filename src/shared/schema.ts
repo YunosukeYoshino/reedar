@@ -13,6 +13,7 @@ export const feedSchema = z.object({
   folderId: z.string().nullable(),
   updatedAt: z.string().nullable(),
   error: z.string().nullable(),
+  removedAt: z.string().optional(),
 });
 export type Feed = z.infer<typeof feedSchema>;
 
@@ -101,6 +102,8 @@ export type Update = z.infer<typeof updateSchema>;
 
 export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("feed.add"), url: z.string().trim().url().max(2048), folderId: z.string().nullable() }),
+  z.object({ type: z.literal("feed.remove"), id: z.string() }),
+  z.object({ type: z.literal("feed.restore"), id: z.string() }),
   z.object({ type: z.literal("feed.move"), id: z.string(), folderId: z.string().nullable() }),
   z.object({ type: z.literal("folder.save"), id: z.string().nullable(), name: z.string().trim().min(1).max(60) }),
   z.object({ type: z.literal("article.read"), id: z.string(), read: z.boolean() }),

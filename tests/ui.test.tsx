@@ -119,3 +119,26 @@ test("summarizes in the article area, shows the supplied source and restores the
   await act(async () => again.click());
   expect(actions).toHaveLength(count);
 });
+
+
+test("a removed feed disappears from reading views and can be restored with its articles", async () => {
+  const feed = snapshot.state.feeds[0];
+  if (!feed) throw new Error("Missing feed fixture");
+  const remove = window.document.querySelector('[aria-label="Test feedを削除"]');
+  if (!(remove instanceof window.HTMLButtonElement)) throw new Error("Missing remove control");
+  await act(async () => remove.click());
+  expect(actions.at(-1)).toEqual({ type: "feed.remove", id: feed.id });
+  feed.removedAt = new Date().toISOString();
+  await act(async () => stream?.onmessage?.({ data: JSON.stringify({ type: "snapshot", snapshot }) }));
+  expect(window.document.querySelectorAll(".article-row")).toHaveLength(0);
+  expect(window.document.querySelector(".article-body")).toBeNull();
+  expect(window.document.querySelector(".sidebar .feed-row")).toBeNull();
+  const restore = window.document.querySelector('[aria-label="Test feedを復元"]');
+  if (!(restore instanceof window.HTMLButtonElement)) throw new Error("Missing restore control");
+  await act(async () => restore.click());
+  expect(actions.at(-1)).toEqual({ type: "feed.restore", id: feed.id });
+  delete feed.removedAt;
+  await act(async () => stream?.onmessage?.({ data: JSON.stringify({ type: "snapshot", snapshot }) }));
+  expect(window.document.querySelectorAll(".article-row")).toHaveLength(2);
+  expect(window.document.querySelector(".sidebar .feed-row")?.textContent).toContain("Test feed");
+});

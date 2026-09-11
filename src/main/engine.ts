@@ -39,9 +39,32 @@ export class Engine {
     switch (action.type) {
       case "feed.add": {
         const url = publicUrl(action.url).href;
-        if (this.store.state.feeds.some((feed) => feed.url === url)) throw new Error("このフィードは登録済みです。");
+        const existing = this.store.state.feeds.find((feed) => feed.url === url);
+        if (existing?.removedAt) {
+          existing.folderId = this.store.folder(action.folderId);
+          delete existing.removedAt;
+          break;
+        }
+        if (existing) throw new Error("このフィードは登録済みです。");
         const result = await this.dependencies.fetchFeed(url, this.store.folder(action.folderId));
         this.store.mergeFeed(result.feed, result.articles);
+        break;
+      }
+      case "feed.remove":
+      case "feed.restore": {
+        const feed = this.store.state.feeds.find((item) => item.id === action.id);
+        if (!feed) throw new Error("フィードが見つかりません。");
+        if (action.type === "feed.restore") delete feed.removedAt;
+        else {
+          feed.removedAt = new Date().toISOString();
+          const ids = new Set<string>();
+          for (const article of this.store.state.articles) if (article.feedId === feed.id) ids.add(article.id);
+          const stops: Promise<void>[] = [];
+          for (const conversation of this.store.state.conversations) {
+            if (ids.has(conversation.articleId) && this.jobs.has(conversation.id)) stops.push(this.stop(conversation.id));
+          }
+          await Promise.all(stops);
+        }
         break;
       }
       case "feed.move": {
@@ -68,13 +91,13 @@ export class Engine {
     this.refreshing = true;
     this.changed();
     try {
-      const feeds = [...this.store.state.feeds];
+      const feeds = this.store.state.feeds.filter((feed) => !feed.removedAt);
       for (let offset = 0; offset < feeds.length; offset += 4) {
         await Promise.all(feeds.slice(offset, offset + 4).map(async (feed) => {
           try {
             const result = await this.dependencies.fetchFeed(feed.url, feed.folderId);
             const current = this.store.state.feeds.find((item) => item.id === feed.id);
-            this.store.mergeFeed({ ...result.feed, folderId: current?.folderId ?? null }, result.articles);
+            if (current && !current.removedAt) this.store.mergeFeed({ ...result.feed, folderId: current.folderId }, result.articles);
           } catch (error) {
             const current = this.store.state.feeds.find((item) => item.id === feed.id);
             if (current) current.error = error instanceof Error ? error.message : "更新できませんでした。";
@@ -87,6 +110,7 @@ export class Engine {
 
   private async send(articleId: string, agent: Conversation["agent"], text: string, purpose: "chat" | "summary" = "chat") {
     const article = this.store.article(articleId);
+    if (this.store.state.feeds.find((feed) => feed.id === article.feedId)?.removedAt) throw new Error("削除済みのフィードです。復元してから質問してください。");
     let conversation = this.store.state.conversations.find((item) => item.articleId === articleId && item.agent === agent);
     if (!conversation) {
       conversation = {

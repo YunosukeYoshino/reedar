@@ -154,6 +154,46 @@ describe("reading workflow", () => {
     await engine.close();
   });
 
+  test("removing a feed survives restart, skips refresh, and restores its articles and conversations", async () => {
+    const { engine, store, article, path } = await setup("remove-feed", async () => {});
+    article.starred = true;
+    await engine.dispatch({ type: "chat.send", articleId: article.id, agent: "codex", text: "Read" });
+    await engine.settle();
+    await engine.dispatch({ type: "feed.remove", id: article.feedId });
+    const reopened = await Store.open(path);
+    expect(reopened.state.feeds[0]?.removedAt).toEqual(expect.any(String));
+    expect(reopened.article(article.id).starred).toBe(true);
+    expect(reopened.state.conversations).toHaveLength(1);
+    await engine.dispatch({ type: "refresh" });
+    expect(store.state.feeds[0]?.removedAt).toEqual(expect.any(String));
+    await engine.dispatch({ type: "feed.restore", id: article.feedId });
+    expect((await Store.open(path)).state.feeds[0]?.removedAt).toBeUndefined();
+    expect(store.article(article.id).starred).toBe(true);
+    await engine.close();
+  });
+
+  test("an in-flight refresh cannot bring back a removed feed", async () => {
+    let started: (() => void) | undefined;
+    let release: (() => void) | undefined;
+    const ready = new Promise<void>((resolve) => { started = resolve; });
+    const waiting = new Promise<void>((resolve) => { release = resolve; });
+    const store = await Store.open(join(directory, "remove-during-refresh.json"));
+    const parsed = await parseFeed(xml, "https://example.com/rss", null);
+    store.mergeFeed(parsed.feed, parsed.articles);
+    const engine = new Engine(store, directory, {
+      run: async () => {}, connect: async (agent) => ({ agent, installed: false, status: "unavailable", detail: "fixture" }),
+      fetchArticleText: async () => ({ text: "body", url: "https://example.com/a" }),
+      fetchFeed: async () => { started?.(); await waiting; return { ...parsed, feed: { ...parsed.feed, title: "Refreshed" } }; },
+    });
+    const refreshing = engine.dispatch({ type: "refresh" });
+    await ready;
+    await engine.dispatch({ type: "feed.remove", id: parsed.feed.id });
+    release?.();
+    await refreshing;
+    expect(structuredClone(store.state.feeds[0])).toMatchObject({ title: "Test", removedAt: expect.any(String) });
+    await engine.close();
+  });
+
   test("refresh failure preserves cached articles and reports the feed error", async () => {
     const { engine, store } = await setup("refresh", async () => {}, true);
     await engine.dispatch({ type: "refresh" });
