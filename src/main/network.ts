@@ -29,9 +29,11 @@ export function isPublicAddress(address: string) {
   catch { return false; }
 }
 
-export async function fetchPublic(value: string, redirects = 0): Promise<{ body: Buffer; url: string; contentType: string }> {
+export async function fetchPublic(value: string, redirects = 0, signal?: AbortSignal): Promise<{ body: Buffer; url: string; contentType: string }> {
+  signal?.throwIfAborted();
   const url = publicUrl(value);
   const addresses = await lookup(url.hostname.replace(/^\[|\]$/g, ""), { all: true });
+  signal?.throwIfAborted();
   if (addresses.length === 0 || addresses.some((address) => !isPublicAddress(address.address))) {
     throw new Error("このURLは公開インターネット上の配信元ではありません。");
   }
@@ -45,14 +47,14 @@ export async function fetchPublic(value: string, redirects = 0): Promise<{ body:
         if (options.all) callback(null, [address]);
         else callback(null, address.address, address.family);
       },
-      agent: false,
-      headers: { "User-Agent": "Reedar/0.1 (+local RSS reader)", Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, image/*;q=0.8, */*;q=0.1", "Accept-Encoding": "identity" },
+      agent: false, signal,
+      headers: { "User-Agent": "Reedar/0.1 (+local RSS reader)", Accept: "text/html, application/xhtml+xml, application/rss+xml, application/atom+xml, application/xml, text/xml, image/*;q=0.8, */*;q=0.1", "Accept-Encoding": "identity" },
     }, (response) => {
       if (response.statusCode && [301, 302, 303, 307, 308].includes(response.statusCode)) {
         response.resume();
         if (redirects >= 4 || !response.headers.location) return reject(new Error("リダイレクト先を取得できません。"));
         const next = new URL(response.headers.location, url).href;
-        fetchPublic(next, redirects + 1).then(resolve, reject);
+        fetchPublic(next, redirects + 1, signal).then(resolve, reject);
         return;
       }
       if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 300) {

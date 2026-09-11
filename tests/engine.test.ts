@@ -3,7 +3,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { AuthenticationRequired } from "../src/main/agents/reader";
-import type { runReader } from "../src/main/agents/reader";
+import type { connection, runReader } from "../src/main/agents/reader";
 import { Engine } from "../src/main/engine";
 import { parseFeed } from "../src/main/feeds";
 import { Store } from "../src/main/store";
@@ -12,16 +12,17 @@ const directory = await mkdtemp(join(tmpdir(), "reedar-engine-test-"));
 afterAll(async () => { await Bun.spawn(["trash", directory]).exited; });
 const xml = `<rss version="2.0"><channel><title>Test</title><link>https://example.com</link><item><guid>article</guid><title>Article</title><link>https://example.com/a</link><description>Evidence in the article.</description></item></channel></rss>`;
 
-async function setup(name: string, run: typeof runReader, failRefresh = false) {
+async function setup(name: string, run: typeof runReader, failRefresh = false, fetchArticleText = async (_url: string, _signal: AbortSignal) => ({ text: "Evidence in the article.", url: "https://example.com/a" })) {
   const path = join(directory, name, "state.json");
   const store = await Store.open(path);
   const result = await parseFeed(xml, "https://example.com/rss", null);
   store.mergeFeed(result.feed, result.articles);
-  const engine = new Engine(store, join(directory, name, "runner"), {
-    run,
-    connect: async (agent) => ({ agent, installed: true, status: "ready", detail: "fixture" }),
-    fetchFeed: async (url, folderId) => { if (failRefresh) throw new Error("Network failed"); return parseFeed(xml, url, folderId); },
-  });
+  const connect: typeof connection = async (agent) => ({ agent, installed: true, status: "ready", detail: "fixture" });
+  const dependencies = {
+    run, connect, fetchArticleText,
+    fetchFeed: async (url: string, folderId: string | null) => { if (failRefresh) throw new Error("Network failed"); return parseFeed(xml, url, folderId); },
+  };
+  const engine = new Engine(store, join(directory, name, "runner"), dependencies);
   await engine.initialize();
   const article = store.state.articles[0];
   if (!article) throw new Error("fixture missing");
@@ -44,6 +45,84 @@ describe("reading workflow", () => {
     expect(article.read).toBe(false);
     expect(store.state.conversations[0]?.messages.at(-1)).toMatchObject({ role: "assistant", text: "First answer", state: { status: "completed" } });
     expect((await Store.open(path)).state.conversations[0]?.messages).toHaveLength(4);
+    await engine.close();
+  });
+
+  test("fetches the linked article before AI reading and reuses the complete source on follow-up", async () => {
+    const source = "Opening paragraph. " + "Detailed evidence missing from the RSS excerpt. ".repeat(20) + "Final conclusion.";
+    const inputs: string[] = [];
+    let fetched = 0;
+    const { engine, store, article } = await setup("full-text", async (_agent, conversation, _question, _cwd, _signal, emit) => {
+      inputs.push(conversation.source.text);
+      emit({ type: "delta", text: "Summary" });
+    }, false, async () => { fetched++; return { text: source, url: "https://example.com/full-article" }; });
+    await engine.dispatch({ type: "chat.send", articleId: article.id, agent: "codex", text: "Summarize" });
+    await engine.settle();
+    await engine.dispatch({ type: "chat.send", articleId: article.id, agent: "codex", text: "Explain the final conclusion" });
+    await engine.settle();
+    expect(inputs).toEqual([source, source]);
+    expect(fetched).toBe(1);
+    expect(article.text).toBe("Evidence in the article.");
+    expect(store.state.conversations[0]?.source).toMatchObject({ text: source, origin: "web", url: "https://example.com/full-article" });
+    await engine.close();
+  });
+
+  test("uses an explicitly marked feed fallback when the linked body cannot be retrieved", async () => {
+    const sources: unknown[] = [];
+    const { engine, store, article } = await setup("full-text-fallback", async (_agent, conversation, _question, _cwd, _signal, emit) => {
+      sources.push(conversation.source);
+      emit({ type: "delta", text: "Limited summary" });
+    }, false, async () => { throw new Error("HTTP 403 private-debug-details"); });
+    await engine.dispatch({ type: "chat.send", articleId: article.id, agent: "codex", text: "Summarize" });
+    await engine.settle();
+    expect(sources).toMatchObject([{ text: article.text, origin: "feed", fetchError: expect.any(String) }]);
+    expect(store.state.conversations[0]?.source).not.toHaveProperty("fetchError", "HTTP 403 private-debug-details");
+    await engine.close();
+  });
+
+  test("stopping during page retrieval never starts an agent", async () => {
+    let started: (() => void) | undefined;
+    const ready = new Promise<void>((resolve) => { started = resolve; });
+    let runs = 0;
+    const { engine, store, article } = await setup("stop-fetch", async () => { runs++; }, false, async (_url, signal) => {
+      started?.();
+      await new Promise<void>((resolve) => { signal.addEventListener("abort", () => resolve(), { once: true }); });
+      return { text: "Late retrieved article", url: "https://example.com/a" };
+    });
+    await engine.dispatch({ type: "chat.summarize", articleId: article.id, agent: "codex" });
+    await ready;
+    const conversation = store.state.conversations[0];
+    if (!conversation) throw new Error("conversation missing");
+    expect(conversation.messages.at(-1)).toMatchObject({ purpose: "summary", state: { status: "running", phase: "fetching" } });
+    await engine.dispatch({ type: "chat.stop", conversationId: conversation.id });
+    await engine.settle();
+    expect(runs).toBe(0);
+    expect(conversation.messages.at(-1)).toMatchObject({ state: { status: "cancelled" } });
+    await engine.close();
+  });
+
+  test("upgrades legacy excerpt conversations while preserving their original source", async () => {
+    let received = "";
+    const { engine, store, article, path } = await setup("legacy-source", async (_agent, conversation) => { received = conversation.source.text; }, false, async () => ({ text: "Complete linked article with its conclusion.", url: "https://example.com/a" }));
+    store.state.conversations.push({ id: "legacy", articleId: article.id, agent: "codex", source: { title: article.title, url: article.url, text: article.text, capturedAt: article.receivedAt }, messages: [{ id: "old", role: "assistant", text: "Old excerpt answer", createdAt: article.receivedAt, state: { status: "completed" } }] });
+    await engine.dispatch({ type: "chat.summarize", articleId: article.id, agent: "codex" });
+    await engine.settle();
+    const conversation = (await Store.open(path)).state.conversations[0];
+    expect(received).toContain("conclusion");
+    expect(conversation?.previousSource?.text).toBe(article.text);
+    expect(conversation?.messages[0]?.text).toBe("Old excerpt answer");
+    expect(conversation?.messages.at(-1)).toMatchObject({ purpose: "summary", sourceOrigin: "web" });
+    await engine.close();
+  });
+
+  test("does not invoke an agent when neither the feed nor page contains text", async () => {
+    let runs = 0;
+    const { engine, store, article } = await setup("empty-source", async () => { runs++; }, false, async () => { throw new Error("blocked"); });
+    article.text = "";
+    await engine.dispatch({ type: "chat.summarize", articleId: article.id, agent: "codex" });
+    await engine.settle();
+    expect(runs).toBe(0);
+    expect(store.state.conversations[0]?.messages.at(-1)).toMatchObject({ state: { status: "failed", error: "記事本文を取得できませんでした。原文を開いて確認してください。" } });
     await engine.close();
   });
 

@@ -17,8 +17,10 @@
     "checksums": "cd release && shasum -a 256 *.dmg *.zip > SHA256SUMS.txt"
   },
   "dependencies": {
+    "@mozilla/readability": "0.6.0",
     "html-entities": "^2.6.0",
     "ipaddr.js": "^2.2.0",
+    "linkedom": "0.18.13",
     "lucide-react": "^0.577.0",
     "react": "~19.2.0",
     "react-dom": "~19.2.0",

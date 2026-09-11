@@ -3,12 +3,13 @@ import { mkdir } from "node:fs/promises";
 import type { Action, Connection, Conversation, Snapshot, Update } from "../shared/schema";
 import { agentSchema, codexModel } from "../shared/schema";
 import { agentError, AuthenticationRequired, connection, runReader } from "./agents/reader";
+import { loadArticleText } from "./article-text";
 import { loadFeed } from "./feeds";
 import { publicUrl } from "./network";
 import { Store } from "./store";
 
-type Dependencies = { fetchFeed: typeof loadFeed; run: typeof runReader; connect: typeof connection };
-const defaults: Dependencies = { fetchFeed: loadFeed, run: runReader, connect: connection };
+type Dependencies = { fetchArticleText: typeof loadArticleText; fetchFeed: typeof loadFeed; run: typeof runReader; connect: typeof connection };
+const defaults: Dependencies = { fetchArticleText: loadArticleText, fetchFeed: loadFeed, run: runReader, connect: connection };
 
 export class Engine {
   connections: Connection[] = agentSchema.options.map((agent) => ({ agent, installed: false, status: "checking", detail: "接続を確認しています" }));
@@ -55,6 +56,7 @@ export class Engine {
       case "refresh": return this.refreshFeeds();
       case "connections.refresh": return this.refreshConnections();
       case "chat.send": return this.send(action.articleId, action.agent, action.text);
+      case "chat.summarize": return this.send(action.articleId, action.agent, "この記事の要点と結論を日本語で簡潔に要約してください。重要な事実と背景を含め、本文にない推測は避けてください。", "summary");
       case "chat.stop": return this.stop(action.conversationId);
     }
     await this.store.save();
@@ -83,9 +85,8 @@ export class Engine {
     } finally { this.refreshing = false; this.changed(); }
   }
 
-  private async send(articleId: string, agent: Conversation["agent"], text: string) {
+  private async send(articleId: string, agent: Conversation["agent"], text: string, purpose: "chat" | "summary" = "chat") {
     const article = this.store.article(articleId);
-    if (!article.text.trim()) throw new Error("記事本文がありません。原文を開いて確認してください。");
     let conversation = this.store.state.conversations.find((item) => item.articleId === articleId && item.agent === agent);
     if (!conversation) {
       conversation = {
@@ -96,10 +97,10 @@ export class Engine {
     }
     if (this.jobs.has(conversation.id)) throw new Error("この会話は実行中です。完了を待つか停止してください。");
     if (this.jobs.size >= 2) throw new Error("同時に実行できる会話は2件です。完了を待ってください。");
-    const previous = structuredClone(conversation);
+    const history = structuredClone(conversation.messages);
     const now = new Date().toISOString();
     const message: Extract<Conversation["messages"][number], { role: "assistant" }> = {
-      id: randomUUID(), role: "assistant", text: "", createdAt: now, state: { status: "running" },
+      id: randomUUID(), role: "assistant", text: "", createdAt: now, state: { status: "running", phase: conversation.source.origin === "web" ? "answering" : "fetching" }, purpose,
       ...(agent === "codex" ? { model: codexModel } : {}),
     };
     conversation.messages.push({ id: randomUUID(), role: "user", text, createdAt: now }, message);
@@ -113,6 +114,28 @@ export class Engine {
       try {
         await this.store.save();
         this.changed();
+        if (current.source.origin !== "web") {
+          try {
+            const source = await this.dependencies.fetchArticleText(article.url, controller.signal);
+            controller.signal.throwIfAborted();
+            if (source.text.trim().length < current.source.text.trim().length) throw new Error("Extracted body is shorter than the feed");
+            if (history.length && !current.previousSource) current.previousSource = structuredClone(current.source);
+            current.source = { title: article.title, url: source.url, text: source.text, capturedAt: new Date().toISOString(), origin: "web" };
+          } catch {
+            controller.signal.throwIfAborted();
+            current.source = { ...current.source, origin: "feed", fetchError: "リンク先本文を取得できなかったため、フィード本文のみを使用しています。" };
+          }
+        }
+        controller.signal.throwIfAborted();
+        if (!current.source.text.trim()) {
+          message.state = { status: "failed", error: "記事本文を取得できませんでした。原文を開いて確認してください。" };
+          return;
+        }
+        message.sourceOrigin = current.source.origin;
+        message.state = { status: "running", phase: "answering" };
+        await this.store.save();
+        this.changed();
+        const previous = { ...structuredClone(current), messages: history };
         await this.dependencies.run(agent, previous, text, this.runnerDirectory, controller.signal, (event) => {
           if (controller.signal.aborted) return;
           if (event.type === "delta") { message.text = event.text; message.state = { status: "running" }; }

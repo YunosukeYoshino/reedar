@@ -17,6 +17,7 @@ beforeAll(async () => {
   await writeFile(join(directory, "private.txt"), "PRIVATE CANARY");
   const store = await Store.open(join(directory, "state.json"));
   const engine = new Engine(store, join(directory, "runner"), {
+    fetchArticleText: async () => { throw new Error("no fixture article"); },
     run: async () => {}, fetchFeed: async () => { throw new Error("no fixture feeds"); },
     connect: async (agent) => ({ agent, installed: false, status: "unavailable", detail: "fixture" }),
   });

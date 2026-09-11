@@ -34,7 +34,7 @@ export const articleSchema = z.object({
 export type Article = z.infer<typeof articleSchema>;
 
 export const runStateSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("running") }),
+  z.object({ status: z.literal("running"), phase: z.enum(["fetching", "answering"]).optional() }),
   z.object({ status: z.literal("waiting"), reason: z.string() }),
   z.object({ status: z.literal("completed") }),
   z.object({ status: z.literal("failed"), error: z.string() }),
@@ -48,15 +48,23 @@ export const messageSchema = z.discriminatedUnion("role", [
     id: z.string(), role: z.literal("assistant"), text: z.string(), createdAt: z.string(),
     state: runStateSchema,
     model: z.string().optional(),
+    purpose: z.enum(["chat", "summary"]).optional(),
+    sourceOrigin: z.enum(["feed", "web"]).optional(),
   }),
 ]);
 export type Message = z.infer<typeof messageSchema>;
+
+export const sourceSchema = z.object({
+  title: z.string(), url: z.string(), text: z.string(), capturedAt: z.string(),
+  origin: z.enum(["feed", "web"]).optional(), fetchError: z.string().optional(),
+});
 
 export const conversationSchema = z.object({
   id: z.string(),
   articleId: z.string(),
   agent: agentSchema,
-  source: z.object({ title: z.string(), url: z.string(), text: z.string(), capturedAt: z.string() }),
+  source: sourceSchema,
+  previousSource: sourceSchema.optional(),
   messages: z.array(messageSchema),
 });
 export type Conversation = z.infer<typeof conversationSchema>;
@@ -100,6 +108,7 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("refresh") }),
   z.object({ type: z.literal("connections.refresh") }),
   z.object({ type: z.literal("chat.send"), articleId: z.string(), agent: agentSchema, text: z.string().trim().min(1).max(4000) }),
+  z.object({ type: z.literal("chat.summarize"), articleId: z.string(), agent: agentSchema }),
   z.object({ type: z.literal("chat.stop"), conversationId: z.string() }),
 ]);
 export type Action = z.infer<typeof actionSchema>;
