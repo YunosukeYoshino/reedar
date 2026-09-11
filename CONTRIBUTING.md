@@ -29,13 +29,14 @@ You do not need a model subscription to run the automated suite. Live AI checks 
 | `src/main/engine.ts` | Library actions, agent jobs, cancellation, and state updates |
 | `src/main/store.ts` | Local JSON persistence and recovery |
 | `src/main/feeds.ts`, `src/main/network.ts` | RSS / Atom parsing, HTML sanitization, and safe network fetching |
+| `src/main/updates.ts`, `src/main/desktop-updates.ts` | Update state, GitHub release checks, Mac dialogs, and signed-app staging |
 | `src/main/opml.ts` | Bounded OPML parsing and subscription export |
 | `src/main/agents/` | CLI discovery, process lifecycle, authentication, and reading adapters |
 | `src/shared/schema.ts` | Zod contracts shared by the host and renderer |
 | `src/ui/` | React reader interface and styles |
 | `scripts/build.ts` | Browser and Electron builds |
 | `scripts/icons.ts`, `assets/` | App icon and macOS icon conversion |
-| `electron-builder.json` | Local macOS preview packaging |
+| `electron-builder.json`, `electron-builder.signed.cjs` | Preview packaging, update metadata, and the optional signed/notarized profile |
 | `.github/workflows/ci.yml` | Automatic pull-request and main-branch checks |
 | `.github/workflows/build-macos.yml` | Manually triggered preview artifact builds |
 | `tests/` | Protocol, storage, network, workflow, desktop, and UI tests |

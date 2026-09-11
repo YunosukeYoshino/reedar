@@ -51,6 +51,14 @@ bun run start
 
 Installation downloads Electron. The start command builds the renderer and desktop entry point, then opens Reedar. Local DMG and ZIP previews can also be built with `bun run dist:mac --arm64`. Developer ID signed releases are not available yet; see [Distribution](docs/distribution.md).
 
+### App updates (0.1.3 development build)
+
+The desktop app checks the public GitHub releases 30 seconds after launch and every six hours while open. Use **Reedar → アップデートを確認…** to check immediately. This preview receives newer public releases and prereleases for the current Mac architecture; it does not downgrade.
+
+Ad-hoc previews notify you and open the release download page. A Developer ID signed build automatically downloads and validates updates, then offers to restart. Choosing **あとで** keeps the app open and applies the staged update after the next normal quit. Restarting stops active AI responses and OPML imports and saves their current results first. Development runs do not check for updates.
+
+**The published 0.1.2 app has no updater and needs a manual replacement.** A first Developer ID signed version also needs to be installed manually when moving from an ad-hoc preview. Successful signed-app replacement is not yet verified: the project still needs a Developer ID Application certificate and notarization credentials. See [Distribution](docs/distribution.md#app-update-delivery) for the required release assets and signing setup.
+
 ### Add your first feed
 
 1. Click **+** in the sidebar and enter an RSS or Atom URL.
@@ -121,7 +129,7 @@ Your library is stored locally:
 
 The two modes use separate libraries. Data includes feeds, cached articles, folders, reading state, stars, and conversations. Files are protected by OS permissions and are **not encrypted**. Quit the app before backing up the data directory.
 
-When you send a question, the selected article text and that conversation are sent to the chosen AI provider through its CLI. Local storage does not make model inference local. Feed, article-page, and image retrieval also makes network requests.
+When you send a question, the selected article text and that conversation are sent to the chosen AI provider through its CLI. Local storage does not make model inference local. Feed, article-page, and image retrieval also makes network requests. Desktop update checks contact GitHub; signed builds also download newer application packages.
 
 Reading sessions treat article content as untrusted input, restrict external tools, and reject permission escalation. The renderer sanitizes feed HTML and runs with Electron isolation and a content security policy. A session-authenticated loopback server checks request origins and hosts; network fetching rejects private destinations.
 
