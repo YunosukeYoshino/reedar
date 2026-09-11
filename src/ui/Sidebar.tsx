@@ -1,4 +1,4 @@
-import { BookOpen, Bot, ChevronDown, ChevronRight, Circle, Folder, FolderPlus, MoreHorizontal, Plus, RefreshCw, Rss, Star } from "lucide-react";
+import { ArrowDownUp, BookOpen, Bot, ChevronDown, ChevronRight, Circle, Folder, FolderPlus, MoreHorizontal, Plus, RefreshCw, Rss, Star } from "lucide-react";
 import { useState } from "react";
 import type { Action, ReaderState } from "../shared/schema";
 import { tone } from "./format";
@@ -55,6 +55,7 @@ export function Sidebar({ state, scope, filter, refreshing, select, perform, edi
       {!state.feeds.length ? <button className="add-first-feed" commandfor="feed-dialog" command="show-modal"><Plus size={15} />最初のフィードを追加</button> : null}
     </div>
     <div className="sidebar-bottom">
+      <button className="nav-row" commandfor="opml-dialog" command="show-modal"><ArrowDownUp size={16} /><span className="nav-label">OPML入出力</span></button>
       <button className="nav-row" commandfor="activity-dialog" command="show-modal"><Bot size={17} /><span className="nav-label">AIの会話</span>{activeRuns ? <span className="activity-count">{activeRuns}</span> : <span className="nav-count">{state.conversations.length || ""}</span>}</button>
       <button className="connection-link" commandfor="connections-dialog" command="show-modal"><span className="local-dot" />エージェント接続<span>↗</span></button>
     </div>

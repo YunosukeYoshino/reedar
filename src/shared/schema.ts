@@ -90,7 +90,7 @@ export type Connection = z.infer<typeof connectionSchema>;
 export const opmlImportSchema = z.object({
   status: z.enum(["running", "completed", "cancelled", "failed"]),
   total: z.number().int().nonnegative(),
-  results: z.array(z.object({ title: z.string(), url: z.string(), status: z.enum(["imported", "skipped", "failed"]), detail: z.string() })),
+  results: z.array(z.object({ id: z.string(), title: z.string(), url: z.string(), status: z.enum(["imported", "skipped", "failed"]), detail: z.string() })),
   error: z.string().optional(),
 });
 export type OpmlImport = z.infer<typeof opmlImportSchema>;

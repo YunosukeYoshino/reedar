@@ -105,21 +105,22 @@ export class Engine {
       try {
         for (let offset = 0; offset < entries.length && !controller.signal.aborted; offset += 4) {
           await Promise.all(entries.slice(offset, offset + 4).map(async (entry) => {
+            const item = { id: randomUUID(), title: entry.title, url: entry.url };
             try {
               let url: string;
               try { url = publicUrl(entry.url).href; }
-              catch { report.results.push({ ...entry, status: "failed", detail: "公開HTTP/HTTPSのフィードURLではありません。" }); return; }
-              if (seen.has(url)) { report.results.push({ ...entry, status: "skipped", detail: "OPML内で重複しています。" }); return; }
+              catch { report.results.push({ ...item, status: "failed", detail: "公開HTTP/HTTPSのフィードURLではありません。" }); return; }
+              if (seen.has(url)) { report.results.push({ ...item, status: "skipped", detail: "OPML内で重複しています。" }); return; }
               seen.add(url);
               const existing = this.store.state.feeds.find((feed) => feed.url === url);
-              if (existing && !existing.removedAt) { report.results.push({ ...entry, status: "skipped", detail: "登録済みです。" }); return; }
-              if (entry.folderName && entry.folderName.length > 60) { report.results.push({ ...entry, status: "failed", detail: "フォルダ名を60文字以内にしてください。" }); return; }
+              if (existing && !existing.removedAt) { report.results.push({ ...item, status: "skipped", detail: "登録済みです。" }); return; }
+              if (entry.folderName && entry.folderName.length > 60) { report.results.push({ ...item, status: "failed", detail: "フォルダ名を60文字以内にしてください。" }); return; }
               const removedAt = existing?.removedAt;
               const result = existing ? { feed: existing, articles: [] } : await this.dependencies.fetchFeed(url, null, controller.signal);
               if (controller.signal.aborted) return;
               const current = this.store.state.feeds.find((feed) => feed.url === url);
               if (current && (!current.removedAt || current.removedAt !== removedAt)) {
-                report.results.push({ ...entry, status: "skipped", detail: "読み込み中に登録状態が変更されました。" }); return;
+                report.results.push({ ...item, status: "skipped", detail: "読み込み中に登録状態が変更されました。" }); return;
               }
               let folderId: string | null = null;
               if (entry.folderName) {
@@ -129,9 +130,9 @@ export class Engine {
               }
               this.store.mergeFeed({ ...result.feed, title: entry.title || result.feed.title, folderId, removedAt: undefined }, result.articles);
               await this.store.save();
-              report.results.push({ ...entry, status: "imported", detail: existing ? "復元しました。" : "登録しました。" });
+              report.results.push({ ...item, status: "imported", detail: existing ? "復元しました。" : "登録しました。" });
             } catch {
-              if (!controller.signal.aborted) report.results.push({ ...entry, status: "failed", detail: "フィードを取得・保存できませんでした。URLと接続を確認してください。" });
+              if (!controller.signal.aborted) report.results.push({ ...item, status: "failed", detail: "フィードを取得・保存できませんでした。URLと接続を確認してください。" });
             } finally { this.changed(); }
           }));
         }

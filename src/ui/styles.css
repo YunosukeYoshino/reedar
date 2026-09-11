@@ -236,3 +236,17 @@ kbd { font: inherit; font-size: 9px; border: 1px solid #ffffff12; border-radius:
 .restore-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
 .restore-row > span { overflow-wrap: anywhere; min-width: 0; }
 .restore-row > button { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+
+.opml-report, .opml-export { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12px; }
+.opml-report > p { margin: 0 0 10px; }
+.opml-report progress { width: 100%; accent-color: var(--accent); }
+.opml-counts { color: var(--secondary); font-size: 11px; }
+.opml-results { list-style: none; padding: 0; margin: 12px 0 0; max-height: 210px; overflow-y: auto; }
+.opml-results li { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.opml-results li > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.opml-results strong { font-weight: 500; overflow-wrap: anywhere; }
+.opml-results li > div > span { flex-shrink: 0; font-size: 10px; color: var(--muted); }
+.opml-results li > div > .opml-result-failed { color: #d5a17b; }
+.opml-results li > p { margin: 5px 0 0; color: var(--secondary); font-size: 11px; }
+.opml-export h3 { font-size: 13px; font-weight: 500; margin: 0 0 9px; }
+.opml-export .dialog-description { font-size: 11px; margin-bottom: 13px; }

@@ -142,3 +142,45 @@ test("a removed feed disappears from reading views and can be restored with its 
   expect(window.document.querySelectorAll(".article-row")).toHaveLength(2);
   expect(window.document.querySelector(".sidebar .feed-row")?.textContent).toContain("Test feed");
 });
+
+
+test("OPML controls upload a selected file, display per-feed results, and stop an import", async () => {
+  const input = window.document.querySelector('#opml-file');
+  expect(input instanceof window.HTMLInputElement).toBe(true);
+  if (!(input instanceof window.HTMLInputElement)) return;
+  const xml = '<opml version="2.0"><head/><body><outline text="Imported" xmlUrl="https://example.org/rss"/></body></opml>';
+  const file = new window.File([xml], "subscriptions.opml", { type: "text/xml" });
+  Object.defineProperty(input, "files", { configurable: true, value: [file] });
+  await act(async () => input.dispatchEvent(new window.Event("change", { bubbles: true })));
+  const form = window.document.querySelector('#opml-dialog form');
+  if (!(form instanceof window.HTMLFormElement)) throw new Error("Missing OPML form");
+  await act(async () => form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+  expect(actions.at(-1)).toEqual({ type: "opml.import", xml });
+  snapshot.opmlImport = { status: "running", total: 3, results: [{ id: "duplicate", title: "Duplicate", url: "https://example.com/rss", status: "skipped", detail: "登録済みです。" }, { id: "blocked", title: "Blocked", url: "http://127.0.0.1/rss", status: "failed", detail: "公開HTTP/HTTPSのフィードURLではありません。" }] };
+  await act(async () => stream?.onmessage?.({ data: JSON.stringify({ type: "snapshot", snapshot }) }));
+  expect(window.document.querySelector('#opml-dialog')?.textContent).toContain("登録済みです。");
+  expect(window.document.querySelector('#opml-dialog')?.textContent).toContain("公開HTTP/HTTPS");
+  expect(window.document.querySelector('#opml-dialog progress')?.getAttribute('value')).toBe("2");
+  const stop = window.document.querySelector('[aria-label="OPMLの読み込みを中止"]');
+  if (!(stop instanceof window.HTMLButtonElement)) throw new Error("Missing OPML stop control");
+  await act(async () => stop.click());
+  expect(actions.at(-1)).toEqual({ type: "opml.stop" });
+  const download = window.document.querySelector('#opml-dialog a[download]');
+  expect(download?.getAttribute("href")).toBe("/api/opml");
+  snapshot.opmlImport.status = "cancelled";
+  await act(async () => stream?.onmessage?.({ data: JSON.stringify({ type: "snapshot", snapshot }) }));
+});
+
+
+test("OPML upload rejects invalid UTF-8 without sending mangled folder names", async () => {
+  const input = window.document.querySelector('#opml-file');
+  const form = window.document.querySelector('#opml-dialog form');
+  if (!(input instanceof window.HTMLInputElement) || !(form instanceof window.HTMLFormElement)) throw new Error("Missing OPML form");
+  const file = new window.File([new Uint8Array([0xff, 0xfe, 0xff])], "invalid.opml");
+  Object.defineProperty(input, "files", { configurable: true, value: [file] });
+  await act(async () => input.dispatchEvent(new window.Event("change", { bubbles: true })));
+  const before = actions.length;
+  await act(async () => form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+  expect(actions).toHaveLength(before);
+  expect(window.document.querySelector('#opml-error')?.textContent).toContain("UTF-8");
+});
