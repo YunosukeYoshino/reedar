@@ -2,10 +2,15 @@ import { app, BrowserWindow, Menu, shell, dialog } from "electron";
 import { join, resolve } from "node:path";
 import { startServer } from "./server";
 import { publicUrl } from "./network";
+import { createDesktopUpdates } from "./desktop-updates";
 
 app.setName("Reedar");
 let runtime: Awaited<ReturnType<typeof startServer>> | undefined;
 let quitting = false;
+let updates: Awaited<ReturnType<typeof createDesktopUpdates>> | undefined;
+let closing: Promise<void> | undefined;
+
+function closeRuntime() { return closing ??= runtime?.close() ?? Promise.resolve(); }
 
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
@@ -32,21 +37,27 @@ else {
       try { void shell.openExternal(publicUrl(url).href); } catch { /* Keep untrusted schemes out of the host. */ }
     });
     window.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+    updates = await createDesktopUpdates(window, async () => {
+      await closeRuntime();
+      quitting = true;
+    });
     Menu.setApplicationMenu(Menu.buildFromTemplate([
-      { label: "Reedar", submenu: [{ role: "about" }, { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { type: "separator" }, { role: "quit" }] },
+      { label: "Reedar", submenu: [{ role: "about" }, updates.menuItem, { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { type: "separator" }, { role: "quit" }] },
       { label: "編集", submenu: [{ role: "undo" }, { role: "redo" }, { type: "separator" }, { role: "cut" }, { role: "copy" }, { role: "paste" }, { role: "selectAll" }] },
       { label: "表示", submenu: [{ role: "reload" }, { role: "togglefullscreen" }, { role: "resetZoom" }, { role: "zoomIn" }, { role: "zoomOut" }] },
       { label: "ウィンドウ", submenu: [{ role: "minimize" }, { role: "zoom" }] },
     ]));
     await window.loadURL(runtime.url);
+    updates.start();
   }).catch((error: unknown) => {
     dialog.showErrorBox("Reedarを起動できませんでした", error instanceof Error ? error.message : "起動エラー");
     app.quit();
   });
   app.on("window-all-closed", () => app.quit());
   app.on("before-quit", (event) => {
+    updates?.dispose();
     if (!runtime || quitting) return;
     event.preventDefault(); quitting = true;
-    void runtime.close().finally(() => app.quit());
+    void closeRuntime().finally(() => app.quit());
   });
 }
