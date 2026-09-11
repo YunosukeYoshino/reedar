@@ -29,17 +29,17 @@ Evidence and provider-specific limits: [Validation](docs/validation.md).
 
 ## First public preview — make the project available
 
-The next distribution milestone is a discoverable source repository and an accurately described downloadable preview.
+The repository and first downloadable preview are public. Installation on another Mac remains the outstanding validation step.
 
 - [x] **Choose the source license.** MIT license added with matching project metadata and packaging configuration.
 - [x] **State preview limitations.** README and distribution notes identify Apple Silicon / Codex verification, ad-hoc signing, missing notarization, and unverified installation on another Mac.
 - [x] **Publish the repository.** Source is available at [YunosukeYoshino/reedar](https://github.com/YunosukeYoshino/reedar).
 - [x] **Run checks on pull requests.** Automatic typecheck, test, and build CI is configured for pull requests and pushes to main. Hosted results are available in [GitHub Actions](https://github.com/YunosukeYoshino/reedar/actions).
-- [ ] **Validate hosted packaging.** Run the existing macOS workflow on GitHub and verify its downloaded artifacts. Local packaging already works.
+- [x] **Validate hosted packaging.** The macOS workflow passed for v0.1.2. Downloaded archives passed SHA-256, DMG, ZIP, and extracted-app signature verification.
 - [x] **Publish a tagged preview.** The v0.1.2 prerelease includes DMG, ZIP, checksums, features, architecture, signing status, and supported-agent limitations.
 - [ ] **Document a fresh installation.** Test on another Apple Silicon Mac with no source checkout, including reading without a CLI and connecting a supported CLI; add a short, non-personal screenshot or demo to the README.
 
-See [Distribution](docs/distribution.md) for the current build procedure. Repository publication and release uploads are still outstanding actions; this checklist does not perform them.
+See [Distribution](docs/distribution.md) for the build procedure and [v0.1.2](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2) for the published artifacts and limitations.
 
 ## Daily reading — proposed next product work
 
