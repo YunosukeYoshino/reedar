@@ -12,6 +12,13 @@
     "package.json"
   ],
   "artifactName": "Reedar-${version}-mac-${arch}-preview.${ext}",
+  "publish": {
+    "provider": "github",
+    "owner": "YunosukeYoshino",
+    "repo": "reedar",
+    "channel": "latest",
+    "releaseType": "prerelease"
+  },
   "mac": {
     "category": "public.app-category.news",
     "icon": "build/icon.icns",

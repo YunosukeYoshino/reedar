@@ -4,7 +4,7 @@ Last verified: **September 12, 2026 (JST)**. Environment: macOS, Bun 1.3.12, Ele
 
 ## Automated checks
 
-`bun run check` passed TypeScript checking, **58 tests with 186 assertions**, and the renderer and Electron builds. The dated sections below record the feature-specific additions.
+`bun run check` passed TypeScript checking, **66 tests with 216 assertions**, and the renderer and Electron builds. The dated sections below record the feature-specific additions.
 
 The suite covers:
 
@@ -131,3 +131,13 @@ The Apple Silicon 0.1.2 app, DMG, and ZIP include the project's MIT license. Bun
 Source was published to [YunosukeYoshino/reedar](https://github.com/YunosukeYoshino/reedar). The first hosted [CI run](https://github.com/YunosukeYoshino/reedar/actions/runs/34631456205) passed at commit `acfd815a51525054a977ca51566f9db8a631156a`, using a clean macOS runner to install dependencies, typecheck, run the test suite, and build the renderer and desktop host. This does not replace the outstanding second-Mac installation check. The [v0.1.2 release notes](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2) record the final source revision, archive provenance, and download limitations.
 
 The release tag points to `1e4eae9d5dff579f0f528e139c4a41893569a042`. Its [CI run](https://github.com/YunosukeYoshino/reedar/actions/runs/34631597749) and [macOS packaging run](https://github.com/YunosukeYoshino/reedar/actions/runs/34631631014) both passed, including 58 tests / 186 assertions. The workflow's Apple Silicon archives were downloaded and passed SHA-256, DMG verification, and ZIP integrity checks. The extracted app reported version 0.1.2 and arm64 architecture, passed strict bundle signature verification, and contained the matching MIT license. GitHub's uploaded asset sizes and SHA-256 digests matched the downloaded artifacts and manifest before publication. The release is published as a prerelease with three assets: DMG, ZIP, and `SHA256SUMS.txt`. It remains ad-hoc signed and unnotarized; these checks do not constitute a new live UI or second-Mac installation test of the hosted build.
+
+## Desktop updates — September 12, 2026
+
+The unreleased 0.1.3 build adds a native update menu, startup/periodic checks, preview download-page notifications, and automatic download/staging for Developer ID signed builds. The automated suite passed **66 tests / 216 assertions**. Added coverage checks architecture/version selection, ignored drafts and unsafe release links, notification deduplication, waiting for download validation, confirmation before restart, persistence failure, signature/download failure, concurrent checks, late shutdown results, offline/manual checks, and downgrade rejection. These tests use a simulated updater; they do not install a real signed update. Type checking and both builds passed, and `bun audit` reported no vulnerabilities.
+
+The local Apple Silicon 0.1.3 bundle launched with the existing 78 articles and six conversations. **Reedar → アップデートを確認…** queried the public repository and displayed that 0.1.3 had no newer compatible release; the public version was still 0.1.2. The dialog closed normally. Its ad-hoc signature passed strict bundle verification, but was not treated as a Developer ID signature, so no installer was downloaded or run.
+
+Packaging produced `app-update.yml` with the fixed public repository and `latest-mac.yml` beside the archives. Both archive sizes and SHA-512 hashes matched update metadata; DMG verification, ZIP integrity, and the SHA-256 manifest passed. The signed profile was exercised with identity discovery disabled and failed as required instead of producing an unsigned update. The modified workflow parsed locally but has not run on GitHub.
+
+The machine has no Developer ID Application identity. A signed/notarized package, native signature rejection against real update archives, immediate restart installation, and installation on normal quit therefore remain unverified. Do not infer successful end-to-end self-updating from the simulated tests. The first updater-enabled app and the first Developer ID signed app each require manual installation for users upgrading from the existing ad-hoc 0.1.2 release.

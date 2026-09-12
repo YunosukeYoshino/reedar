@@ -1,6 +1,6 @@
 # Roadmap
 
-Current baseline: **0.1.2**, September 12, 2026. Reedar runs locally on macOS with verified Codex reading and locally built Apple Silicon previews. The first public prerelease is [v0.1.2](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2).
+Current development baseline: **0.1.3 (unreleased)**, September 12, 2026. Reedar runs locally on macOS with verified Codex reading and locally built Apple Silicon previews. The first public prerelease is [v0.1.2](https://github.com/YunosukeYoshino/reedar/releases/tag/v0.1.2).
 
 Checked items are implemented and validated within the scope stated. Unchecked items are proposed work, not release-date commitments. The sections below have separate completion criteria: daily-reader improvements and additional providers do not all need to ship before a first public preview.
 
@@ -8,7 +8,7 @@ Checked items are implemented and validated within the scope stated. Unchecked i
 
 Automatic PR checks are configured. Complete **a fresh installation on another Apple Silicon Mac** to extend validation beyond the development machine. The license and preview limitations are documented in the public repository and prerelease. Other reader features can follow a clearly labeled early preview.
 
-Subscription removal/restoration and OPML import/export are now implemented. Folder cleanup can follow. Automatic refresh is the next convenience improvement; service sync, more providers, and automatic updates can wait.
+Subscription removal/restoration and OPML import/export are now implemented. Folder cleanup can follow. Automatic refresh is the next convenience improvement; service sync and more providers can wait. Desktop update checking is implemented; automatic installation awaits signed release validation.
 
 The detailed checkboxes below remain the source of status for these priorities.
 
@@ -23,7 +23,7 @@ The detailed checkboxes below remain the source of status for these priorities.
 - [x] Explicit execution states, cancellation, source snapshots, and restricted reading sessions.
 - [x] App icon, local Apple Silicon DMG / ZIP packaging, and checksums; ad-hoc signing only.
 - [x] English project and contribution documentation, issue / PR templates, and a manual packaging workflow definition.
-- [x] Local automated checks: 58 tests / 186 assertions, type checking, and desktop / renderer builds.
+- [x] Local automated checks: 66 tests / 216 assertions, type checking, and desktop / renderer builds.
 
 Evidence and provider-specific limits: [Validation](docs/validation.md).
 
@@ -69,7 +69,8 @@ Provider work can progress independently. Neither Claude verification nor Antigr
 
 - [ ] **Sign and notarize releases.** Configure Developer ID signing, Hardened Runtime and required entitlements, notarization, and stapling; validate the downloaded app with Gatekeeper on another Mac. The current preview uses ad-hoc signing.
 - [ ] **Validate Intel support if it will be advertised.** The packaging configuration accepts `x64`, but Intel execution has not been tested. An Apple Silicon-only release is a valid initial scope.
-- [ ] **Provide an update path.** Start with visible version information and release instructions; add automatic updates after signed release hosting is established.
+- [x] **Check for app updates.** Packaged apps check GitHub automatically and from the Mac menu. Ad-hoc previews link to the download page.
+- [ ] **Validate automatic installation.** The updater, metadata, and signed-build configuration are implemented. Verify the complete upgrade between two Developer ID signed and notarized releases before claiming end-to-end support.
 
 ## Later candidates — not required for the first release
 
